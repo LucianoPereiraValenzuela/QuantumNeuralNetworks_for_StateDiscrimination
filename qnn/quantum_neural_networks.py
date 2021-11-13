@@ -195,26 +195,28 @@ class StateDiscriminativeQuantumNeuralNetworks:
         A dictionary with the parameters or None
         """
 
-        if not len(parameters) % 11 == 0:
+        if not ((len(parameters) - 3) % 8 == 0):
             self._logger.error('Parameter list length is not consistent. Should be groups of 11 items.')
             return None
 
-        n = len(parameters) // 11
+        n = (len(parameters) - 3) // 8
+        u_params = [[parameters[0]], [parameters[1]], [parameters[2]]]
+        parameters = parameters[3:]
         param_list = [parameters[i * n:(i + 1) * n] for i in range(len(parameters) // n)]
 
         return {
             'n': n,
-            'theta_u': param_list[0],
-            'phi_u': param_list[1],
-            'lambda_u': param_list[2],
-            'theta_1': param_list[3],
-            'theta_2': param_list[4],
-            'theta_v1': param_list[5],
-            'theta_v2': param_list[6],
-            'phi_v1': param_list[7],
-            'phi_v2': param_list[8],
-            'lambda_v1': param_list[9],
-            'lambda_v2': param_list[10],
+            'theta_u': u_params[0],
+            'phi_u': u_params[1],
+            'lambda_u': u_params[2],
+            'theta_1': param_list[0],
+            'theta_2': param_list[1],
+            'theta_v1': param_list[2],
+            'theta_v2': param_list[3],
+            'phi_v1': param_list[4],
+            'phi_v2': param_list[5],
+            'lambda_v1': param_list[6],
+            'lambda_v2': param_list[7],
         }
 
     def discriminate(self, optimizer, initial_params):
@@ -223,8 +225,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
                                   initial_point=initial_params)
 
 
-def HelstromBound( psi, phi ):
-    return 0.5 - 0.5*np.sqrt( 1 - abs(np.vdot( psi, phi ))**2 )
+def helstrom_bound(psi, phi):
+    return 0.5 - 0.5 * np.sqrt(1 - abs(np.vdot(psi, phi)) ** 2)
 
 def random_quantum_state():
     z0 = np.random.randn(2) + 1j * np.random.randn(2)
