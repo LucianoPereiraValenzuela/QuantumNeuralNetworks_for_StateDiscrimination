@@ -223,7 +223,11 @@ class StateDiscriminativeQuantumNeuralNetworks:
                                   initial_point=initial_params)
 
 
-
 def HelstromBound( psi, phi ):
     return 0.5 - 0.5*np.sqrt( 1 - abs(np.vdot( psi, phi ))**2 )
+
+def random_quantum_state():
+    z0 = np.random.randn(2) + 1j * np.random.randn(2)
+    z0 = z0 / np.linalg.norm(z0)
+    return z0
 
