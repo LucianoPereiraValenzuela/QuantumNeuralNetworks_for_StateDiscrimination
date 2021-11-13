@@ -149,7 +149,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
 
         n = p['n'] + 1
 
-        measuraments = []
+        measurements = []
         for state in self._states:
             # Create the psi circuit
             qc = QuantumCircuit(n, n - 1)
@@ -158,27 +158,27 @@ class StateDiscriminativeQuantumNeuralNetworks:
             qc.compose(circuit, list(range(n)), inplace=True)
             qc.measure(range(1, n), range(n - 1))
 
-            # Transpile and run
-            qc = transpile(qc, self._backend)
-            results = self._backend.run(qc, self._shots)
-            measuraments.append(results.result().get_counts())
+            measurements.append(qc)
+        # Transpile and run
+        qc = transpile(measurements, self._backend)
+        results = self._backend.run(qc, self._shots).result().get_counts()
 
         if n == 2:
             # Get prob
-            p_1_psi = measuraments[0].get('1', 0) / self._shots
-            p_0_phi = measuraments[1].get('0', 0) / self._shots
+            p_1_psi = results[0].get('1', 0) / self._shots
+            p_0_phi = results[1].get('0', 0) / self._shots
             # p_1_phi = counts_phi.get('1', 0) / shots
             # p_0_psi = counts_psi.get('0', 0) / shots
 
             return 0.5 * p_1_psi + 0.5 * p_0_phi
         elif n == 3:
             # Get prob
-            p_1_psi = measuraments[0].get('01', 0) / self._shots
-            p_0_phi = measuraments[1].get('00', 0) / self._shots
+            p_1_psi = results[0].get('01', 0) / self._shots
+            p_0_phi = results[1].get('00', 0) / self._shots
             p_err = .5 * p_1_psi + .5 * p_0_phi
 
-            p_i_psi = measuraments[0].get('11', 0) / self._shots + measuraments[0].get('10', 0) / self._shots
-            p_i_phi = measuraments[1].get('11', 0) / self._shots + measuraments[1].get('10', 0) / self._shots
+            p_i_psi = results[0].get('11', 0) / self._shots + results[0].get('10', 0) / self._shots
+            p_i_phi = results[1].get('11', 0) / self._shots + results[1].get('10', 0) / self._shots
             p_inc = .5 * p_i_psi + .5 * p_i_phi
 
             return self._alpha_1 * p_err + self._alpha_2 * p_inc
