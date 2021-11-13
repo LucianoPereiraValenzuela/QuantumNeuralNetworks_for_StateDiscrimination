@@ -1,7 +1,6 @@
 import logging
 import numpy as np
-from qiskit import QuantumCircuit, Aer
-from qiskit import transpile
+from qiskit import QuantumCircuit, transpile, Aer
 from config import config
 from typing import Optional
 
@@ -217,3 +216,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
             'lambda_v1': param_list[9],
             'lambda_v2': param_list[10],
         }
+
+    def discriminat(self, optimizer, initial_params):
+        return optimizer.optimize(len(initial_params),
+                                  self.cost_function,
+                                  initial_point=initial_params)
