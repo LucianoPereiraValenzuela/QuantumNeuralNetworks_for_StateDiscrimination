@@ -8,31 +8,37 @@ from ..quantum_neural_networks import StateDiscriminativeQuantumNeuralNetworks
 class TestStateDiscriminativeQuantumNeuralNetworks:
 
     def instance_test(self):
-        """Tests the instance
-        """
+        psi = [0]
+        phi = [0]
+        backend = 'aer_simulator'
+        shots = 1
 
-        qnn = StateDiscriminativeQuantumNeuralNetworks()
+        qnn = StateDiscriminativeQuantumNeuralNetworks(psi, phi, backend, shots)
 
-        assert qnn is not None
+        assert qnn._psi is psi
+        assert qnn._phi is phi
+        assert qnn._backend is backend
+        assert qnn._shots is shots
+
+    def cost_function_test(self):
+        psi = [0]
+        phi = [0]
+
+        qnn = StateDiscriminativeQuantumNeuralNetworks(psi, phi)
+
+        pass
+
+    def decompose_parameters_test(self):
+        pass
+
+    def discriminate_test(self):
+        pass
 
     def get_n_element_povm_test(self):
-        pi = np.pi
-        n = 3
-        th_u = [0]
-        fi_u = [0]
-        lam_u = [pi / 2]
-        th1 = [pi, pi / 2]
-        th2 = [pi / 2, pi]
-        th_v1 = [pi, pi / 2]
-        th_v2 = [pi / 2, pi]
-        fi_v1 = [pi, pi / 2]
-        fi_v2 = [pi / 2, pi]
-        lam_v1 = [pi, pi / 2]
-        lam_v2 = [pi / 2, pi]
+        pass
 
-        qnn = StateDiscriminativeQuantumNeuralNetworks()
+    def helstrom_bound_test(self):
+        pass
 
-        povm_n = qnn.get_n_element_povm(n, th_u, fi_u, lam_u, th1, th2, th_v1, th_v2, fi_v1, fi_v2, lam_v1, lam_v2)
-        povm_n.draw()
-
-        assert 1 == 1
+    def random_quantum_state_test(self):
+        pass

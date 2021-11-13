@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 from qiskit import QuantumCircuit, transpile, Aer
-from config import config
+from .config import config
 from typing import Optional
 
 
@@ -11,7 +11,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
             psi: np.array,
             phi: np.array,
             backend: str = 'aer_simulator',
-            shots: int = 2 ** 10) -> None:
+            shots: int = 2 ** 10
+    ) -> None:
         """Constructor.
         Includes the config and logger as well as the main params.
 
@@ -39,8 +40,109 @@ class StateDiscriminativeQuantumNeuralNetworks:
         self._backend = backend
         self._shots = shots
 
+    def cost_function(self, params) -> float:
+        """Cost function.
+
+        Parameters
+        -------
+        params
+            A flat list of all the parameters.
+
+        Returns
+        -------
+        The cost.
+        """
+
+        p = self.decompose_parameters(params)
+        if not p:
+            self._logger.error('Cannot calculate the cost function with these parameters.')
+            return 0
+
+        # Create the first circuit using get_n_element_povm
+        circuit = self.get_n_element_povm(
+            p['n'] + 1, p['theta_u'], p['phi_u'], p['lambda_u'], p['theta_1'], p['theta_2'], p['theta_v1'],
+            p['theta_v2'], p['phi_v1'], p['phi_v2'], p['lambda_v1'], p['lambda_v2'])
+
+        # Create the psi circuit
+        qc_psi = QuantumCircuit(2, 1)
+        qc_psi.initialize(self._psi, 0)
+        qc_psi.barrier()
+        qc_psi.compose(circuit, [0, 1], inplace=True)
+        qc_psi.measure(1, 0)
+
+        # Create the phi circuit
+        qc_phi = QuantumCircuit(2, 1)
+        qc_phi.initialize(self._phi, 0)
+        qc_phi.barrier()
+        qc_phi.compose(circuit, [0, 1], inplace=True)
+        qc_phi.measure(1, 0)
+
+        # Create the backend
+        backend_sim = Aer.get_backend(self._backend)
+
+        # Transpile and run
+        qc_psi = transpile(qc_psi, backend_sim)
+        results_psi = backend_sim.run(qc_psi, self._shots)
+        qc_phi = transpile(qc_phi, backend_sim)
+        results_phi = backend_sim.run(qc_phi, self._shots)
+
+        # Count
+        counts_psi = results_psi.result().get_counts()
+        counts_phi = results_phi.result().get_counts()
+
+        # Get prob
+        p_1_psi = counts_psi.get('1', 0) / self._shots
+        p_0_phi = counts_phi.get('0', 0) / self._shots
+        # p_1_phi = counts_phi.get('1', 0) / shots
+        # p_0_psi = counts_psi.get('0', 0) / shots
+
+        return 0.5 * p_1_psi + 0.5 * p_0_phi
+
+    def decompose_parameters(self, parameters: list) -> Optional[dict]:
+        """Qiskit optimizations require a 1-dimension array, thus the
+        params should be passed as a list. However, that makes the code
+        very difficult to understand - that's why internally the params
+        are decomposed.
+
+        Parameters
+        -------
+        parameters
+            List with all the required parameters
+
+        Returns
+        -------
+        A dictionary with the parameters or None
+        """
+
+        if not len(parameters[3:]) % 8 == 0:
+            self._logger.error('Parameter list is not valid. Should be three floats plus n groups of eight floats.')
+            return None
+
+        n = len(parameters[3:]) // 8
+        u_params = [[parameters[0]], [parameters[1]], [parameters[2]]]
+        parameters = parameters[3:]
+        param_list = [parameters[i * n:(i + 1) * n] for i in range(len(parameters) // n)]
+
+        return {
+            'n': n,
+            'theta_u': u_params[0],
+            'phi_u': u_params[1],
+            'lambda_u': u_params[2],
+            'theta_1': param_list[0],
+            'theta_2': param_list[1],
+            'theta_v1': param_list[2],
+            'theta_v2': param_list[3],
+            'phi_v1': param_list[4],
+            'phi_v2': param_list[5],
+            'lambda_v1': param_list[6],
+            'lambda_v2': param_list[7],
+        }
+
+    def discriminate(self, optimizer, initial_params):
+        return optimizer.optimize(len(initial_params), self.cost_function, initial_point=initial_params)
+
+    @staticmethod
     def get_n_element_povm(
-            self,
             n: int,
             theta_u: [float],
             phi_u: [float],
@@ -121,115 +223,12 @@ class StateDiscriminativeQuantumNeuralNetworks:
 
         return povm
 
-    def cost_function(self, params) -> float:
-        """Cost function.
+    @staticmethod
+    def helstrom_bound(psi: float, phi: float) -> float:
+        return 0.5 - 0.5 * np.sqrt(1 - abs(np.vdot(psi, phi)) ** 2)
 
-        Parameters
-        -------
-        params
-            A flat list of all the parameters.
-
-        Returns
-        -------
-        The cost.
-        """
-
-        p = self.decompose_parameters(params)
-        if not p:
-            self._logger.error('Cannot calculate the cost function with these parameters.')
-            return 0
-
-        # Create the first circuit using get_n_element_povm
-        circuit = self.get_n_element_povm(
-            p['n'] + 1, p['theta_u'], p['phi_u'], p['lambda_u'], p['theta_1'], p['theta_2'], p['theta_v1'],
-            p['theta_v2'], p['phi_v1'], p['phi_v2'], p['lambda_v1'], p['lambda_v2'])
-
-        # Create the psi circuit
-        qc_psi = QuantumCircuit(2, 1)
-        qc_psi.initialize(self._psi, 0)
-        qc_psi.barrier()
-        qc_psi.compose(circuit, [0, 1], inplace=True)
-        qc_psi.measure(1, 0)
-
-        # Create the phi circuit
-        qc_phi = QuantumCircuit(2, 1)
-        qc_phi.initialize(self._phi, 0)
-        qc_phi.barrier()
-        qc_phi.compose(circuit, [0, 1], inplace=True)
-        qc_phi.measure(1, 0)
-
-        # Create the backend
-        backend_sim = Aer.get_backend(self._backend)
-
-        # Transpile and run
-        qc_psi = transpile(qc_psi, backend_sim)
-        results_psi = backend_sim.run(qc_psi, self._shots)
-        qc_phi = transpile(qc_phi, backend_sim)
-        results_phi = backend_sim.run(qc_phi, self._shots)
-
-        # Count
-        counts_psi = results_psi.result().get_counts()
-        counts_phi = results_phi.result().get_counts()
-
-        # Get prob
-        p_1_psi = counts_psi.get('1', 0) / self._shots
-        p_0_phi = counts_phi.get('0', 0) / self._shots
-        # p_1_phi = counts_phi.get('1', 0) / shots
-        # p_0_psi = counts_psi.get('0', 0) / shots
-
-        return 0.5 * p_1_psi + 0.5 * p_0_phi
-
-    def decompose_parameters(self, parameters: list) -> Optional[dict]:
-        """Qiskit optimizations require a 1-dimension array, thus the
-        params should be passed as a list. However, that makes the code
-        very difficult to understand - that's why internally the params
-        are decomposed.
-
-        Parameters
-        -------
-        parameters
-            List with all the required parameters
-
-        Returns
-        -------
-        A dictionary with the parameters or None
-        """
-
-        if not ((len(parameters) - 3) % 8 == 0):
-            self._logger.error('Parameter list length is not consistent. Should be groups of 11 items.')
-            return None
-
-        n = (len(parameters) - 3) // 8
-        u_params = [[parameters[0]], [parameters[1]], [parameters[2]]]
-        parameters = parameters[3:]
-        param_list = [parameters[i * n:(i + 1) * n] for i in range(len(parameters) // n)]
-
-        return {
-            'n': n,
-            'theta_u': u_params[0],
-            'phi_u': u_params[1],
-            'lambda_u': u_params[2],
-            'theta_1': param_list[0],
-            'theta_2': param_list[1],
-            'theta_v1': param_list[2],
-            'theta_v2': param_list[3],
-            'phi_v1': param_list[4],
-            'phi_v2': param_list[5],
-            'lambda_v1': param_list[6],
-            'lambda_v2': param_list[7],
-        }
-
-    def discriminate(self, optimizer, initial_params):
-        return optimizer.optimize(len(initial_params),
-                                  self.cost_function,
-                                  initial_point=initial_params)
-
-
-def helstrom_bound(psi, phi):
-    return 0.5 - 0.5 * np.sqrt(1 - abs(np.vdot(psi, phi)) ** 2)
-
-def random_quantum_state():
-    z0 = np.random.randn(2) + 1j * np.random.randn(2)
-    z0 = z0 / np.linalg.norm(z0)
-    return z0
-
+    @staticmethod
+    def random_quantum_state():
+        z0 = np.random.randn(2) + 1j * np.random.randn(2)
+        z0 = z0 / np.linalg.norm(z0)
+        return z0
