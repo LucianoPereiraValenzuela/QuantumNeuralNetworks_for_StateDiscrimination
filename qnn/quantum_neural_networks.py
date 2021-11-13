@@ -9,8 +9,7 @@ from typing import Optional
 class StateDiscriminativeQuantumNeuralNetworks:
     def __init__(
             self,
-            psi: np.array,
-            phi: np.array,
+            states: [np.array],
             alpha_1: float = 0.5,
             alpha_2: float = 0.5,
             backend: Backend = Aer.get_backend('aer_simulator'),
@@ -37,8 +36,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
         log_handler.setFormatter(logging.Formatter(self._config.LOG_CONFIG['format']))
         self._logger.addHandler(log_handler)
 
-        self._psi = psi
-        self._phi = phi
+        self._states = states
         self._backend = backend
         self._shots = shots
         self._alpha_1 = alpha_1
@@ -151,46 +149,36 @@ class StateDiscriminativeQuantumNeuralNetworks:
 
         n = p['n'] + 1
 
-        # Create the psi circuit
-        qc_psi = QuantumCircuit( n, n - 1 )
-        qc_psi.initialize(self._psi, 0)
-        qc_psi.barrier()
-        qc_psi.compose(circuit, list(range(n)), inplace=True)
-        qc_psi.measure( range(1, n), range(n-1) )
+        measuraments = []
+        for state in self._states:
+            # Create the psi circuit
+            qc = QuantumCircuit(n, n - 1)
+            qc.initialize(state, 0)
+            qc.barrier()
+            qc.compose(circuit, list(range(n)), inplace=True)
+            qc.measure(range(1, n), range(n - 1))
 
-        # Create the phi circuit
-        qc_phi = QuantumCircuit(n, n - 1)
-        qc_phi.initialize(self._phi, 0)
-        qc_phi.barrier()
-        qc_phi.compose(circuit, range(n), inplace=True)
-        qc_phi.measure( range(1, n), range(n-1) )
-
-        # Transpile and run
-        qc_psi = transpile(qc_psi, self._backend)
-        results_psi = self._backend.run(qc_psi, self._shots)
-        qc_phi = transpile(qc_phi, self._backend)
-        results_phi = self._backend.run(qc_phi, self._shots)
-
-        # Count
-        counts_psi = results_psi.result().get_counts()
-        counts_phi = results_phi.result().get_counts()
+            # Transpile and run
+            qc = transpile(qc, self._backend)
+            results = self._backend.run(qc, self._shots)
+            measuraments.append(results.result().get_counts())
 
         if n == 2:
             # Get prob
-            p_1_psi = counts_psi.get('1', 0) / self._shots
-            p_0_phi = counts_phi.get('0', 0) / self._shots
+            p_1_psi = measuraments[0].get('1', 0) / self._shots
+            p_0_phi = measuraments[1].get('0', 0) / self._shots
             # p_1_phi = counts_phi.get('1', 0) / shots
             # p_0_psi = counts_psi.get('0', 0) / shots
 
             return 0.5 * p_1_psi + 0.5 * p_0_phi
         elif n == 3:
             # Get prob
-            p_1_psi = counts_psi.get('01', 0) / self._shots
-            p_0_phi = counts_phi.get('00', 0) / self._shots
+            p_1_psi = measuraments[0].get('01', 0) / self._shots
+            p_0_phi = measuraments[1].get('00', 0) / self._shots
             p_err = .5 * p_1_psi + .5 * p_0_phi
 
-            p_i_psi = counts_psi.get('11', 0) / self._shots + counts_psi.get('10', 0) / self._shots
-            p_i_phi = counts_phi.get('11', 0) / self._shots + counts_phi.get('10', 0) / self._shots
+            p_i_psi = measuraments[0].get('11', 0) / self._shots + measuraments[0].get('10', 0) / self._shots
+            p_i_phi = measuraments[1].get('11', 0) / self._shots + measuraments[1].get('10', 0) / self._shots
             p_inc = .5 * p_i_psi + .5 * p_i_phi
 
             return self._alpha_1 * p_err + self._alpha_2 * p_inc
