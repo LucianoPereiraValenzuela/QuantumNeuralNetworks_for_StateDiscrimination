@@ -1,13 +1,18 @@
 import logging
+import numpy as np
 from qiskit import QuantumCircuit, Aer
 from qiskit import transpile
 from config import config
-
 from typing import Optional
 
 
 class StateDiscriminativeQuantumNeuralNetworks:
-    def __init__(self, psi, phi, backend='aer_simulator', shots=2**10) -> None:
+    def __init__(
+            self,
+            psi: np.array,
+            phi: np.array,
+            backend: str = 'aer_simulator',
+            shots: int = 2 ** 10) -> None:
         """Constructor.
         Includes the config and logger as well as the main params.
 
@@ -20,7 +25,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
         backend
             Qiskit backend
         shots
-            TBD
+            Number of simulations
         """
 
         self._config = config
