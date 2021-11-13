@@ -143,7 +143,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
         # Create the first circuit using get_n_element_povm
         circuit = self.get_n_element_povm(
             p['n'] + 1, p['theta_u'], p['phi_u'], p['lambda_u'], p['theta_1'], p['theta_2'], p['theta_v1'],
-            p['phi_v1'], p['phi_v2'], p['lambda_v1'], p['lambda_v2'])
+            p['theta_v2'], p['phi_v1'], p['phi_v2'], p['lambda_v1'], p['lambda_v2'])
 
         # Create the psi circuit
         qc_psi = QuantumCircuit(2, 1)
@@ -208,8 +208,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
             'theta_u': param_list[0],
             'phi_u': param_list[1],
             'lambda_u': param_list[2],
-            'theta1': param_list[3],
-            'theta2': param_list[4],
+            'theta_1': param_list[3],
+            'theta_2': param_list[4],
             'theta_v1': param_list[5],
             'theta_v2': param_list[6],
             'phi_v1': param_list[7],
