@@ -217,7 +217,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
             'lambda_v2': param_list[10],
         }
 
-    def discriminat(self, optimizer, initial_params):
+    def discriminate(self, optimizer, initial_params):
         return optimizer.optimize(len(initial_params),
                                   self.cost_function,
                                   initial_point=initial_params)
