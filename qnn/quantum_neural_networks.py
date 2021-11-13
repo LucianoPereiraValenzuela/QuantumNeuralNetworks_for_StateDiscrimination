@@ -1,31 +1,24 @@
 import logging
-
-import numpy as np
-from noisyopt import minimizeSPSA
-from qiskit import QuantumCircuit, pulse
-from qiskit.test.mock import FakeValencia
-from qiskit.circuit import Gate
-from qiskit import transpile, schedule as build_schedule
-from scipy.linalg import expm
-from scipy.optimize import minimize
-
-from .config import config
+from qiskit import QuantumCircuit, Aer
+from qiskit import transpile
+from config import config
 
 
 class StateDiscriminativeQuantumNeuralNetworks:
-    def __init__(
-            self
-    ) -> None:
+    def __init__(self,  ψ, ϕ) -> None:
+        # Config
         self._config = config
-
         self._logger = logging.getLogger(self._config.LOG_CONFIG['name'])
         self._logger.setLevel(self._config.LOG_CONFIG['level'])
         log_handler = self._config.LOG_CONFIG['stream_handler']
         log_handler.setFormatter(logging.Formatter(self._config.LOG_CONFIG['format']))
         self._logger.addHandler(log_handler)
 
-    def get_n_element_povm(self, n, th_u, fi_u, lam_u, th1, th2, th_v1, th_v2, fi_v1, fi_v2, lam_v1, lam_v2):
+        # Parameters
+        self.ψ = ψ
+        self.ϕ = ϕ
 
+    def get_n_element_povm(self, n, th_u, fi_u, lam_u, th1, th2, th_v1, th_v2, fi_v1, fi_v2, lam_v1, lam_v2):
         povm = QuantumCircuit(n, name='POVM_n')
         povm.u(th_u[0], fi_u[0], lam_u[0], 0)
 
@@ -57,3 +50,43 @@ class StateDiscriminativeQuantumNeuralNetworks:
             povm.compose(gate_v2, list(range(1, i + 1)) + [0], inplace=True)
 
         return povm
+
+    def cost_function(self, n, th_u, fi_u, lam_u, th1, th2, th_v1, th_v2, fi_v1, fi_v2, lam_v1, lam_v2,
+                      backend='aer_simulator', shots=2 ** 10):
+        # Create the first circuit using get_n_element_povm
+        circuit = self.get_n_element_povm(n, th_u, fi_u, lam_u, th1, th2, th_v1, th_v2, fi_v1, fi_v2, lam_v1, lam_v2)
+
+        # Create the psi circuit
+        qc_ψ = QuantumCircuit(2, 1)
+        qc_ψ.initialize(self.ψ, 0)
+        qc_ψ.barrier()
+        qc_ψ.compose(circuit, [0, 1], inplace=True)
+        qc_ψ.measure(1, 0)
+
+        # Create the phi circuit
+        qc_ϕ = QuantumCircuit(2, 1)
+        qc_ϕ.initialize(self.ϕ, 0)
+        qc_ϕ.barrier()
+        qc_ϕ.compose(circuit, [0, 1], inplace=True)
+        qc_ϕ.measure(1, 0)
+
+        # Create the backend
+        backend_sim = Aer.get_backend(backend)
+
+        # Transpile and run
+        qc_ψ = transpile(qc_ψ, backend_sim)
+        results_ψ = backend_sim.run(qc_ψ)
+        qc_ϕ = transpile(qc_ψ, backend_sim)
+        results_ϕ = backend_sim.run(qc_ϕ)
+
+        # Count
+        counts_ψ = results_ψ.result().get_counts()
+        counts_ϕ = results_ϕ.result().get_counts()
+
+        # Get prob
+        p_1_ψ = counts_ψ.get('1', 0) / shots
+        p_0_ϕ = counts_ϕ.get('0', 0) / shots
+        # p_1_ϕ = counts_ϕ.get('1', 0) / shots
+        # p_0_ψ = counts_ψ.get('0', 0) / shots
+
+        return 0.5 * p_1_ψ + 0.5 * p_0_ϕ
