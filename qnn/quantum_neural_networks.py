@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 from qiskit import QuantumCircuit, transpile, Aer
+from qiskit.providers import Backend
 from config import config
 from typing import Optional
 
@@ -12,7 +13,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
             phi: np.array,
             alpha_1: float = 0.5,
             alpha_2: float = 0.5,
-            backend: str = 'aer_simulator',
+            backend: Backend = Aer.get_backend('aer_simulator'),
             shots: int = 2 ** 10) -> None:
         """Constructor.
         Includes the config and logger as well as the main params.
@@ -164,14 +165,11 @@ class StateDiscriminativeQuantumNeuralNetworks:
         qc_phi.compose(circuit, range(n), inplace=True)
         qc_phi.measure( range(1, n), range(n-1) )
 
-        # Create the backend
-        backend_sim = Aer.get_backend(self._backend)
-
         # Transpile and run
-        qc_psi = transpile(qc_psi, backend_sim)
-        results_psi = backend_sim.run(qc_psi, self._shots)
-        qc_phi = transpile(qc_phi, backend_sim)
-        results_phi = backend_sim.run(qc_phi, self._shots)
+        qc_psi = transpile(qc_psi, self._backend)
+        results_psi = self._backend.run(qc_psi, self._shots)
+        qc_phi = transpile(qc_phi, self._backend)
+        results_phi = self._backend.run(qc_phi, self._shots)
 
         # Count
         counts_psi = results_psi.result().get_counts()
