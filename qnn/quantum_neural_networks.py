@@ -56,8 +56,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
 
         p = self.decompose_parameters(params)
         if not p:
-            self._logger.error('Cannot calculate the cost function with these parameters.')
-            return 0
+            raise Exception('Cannot calculate the cost function with these parameters.')
 
         # Create the first circuit using get_n_element_povm
         circuit = self.get_n_element_povm(
@@ -112,7 +111,25 @@ class StateDiscriminativeQuantumNeuralNetworks:
 
             return self._alpha_1 * p_err + self._alpha_2 * p_inc
 
-    def decompose_parameters(self, parameters: list) -> Optional[dict]:
+    def discriminate(self, optimizer: Optimizer, initial_params: [float]):
+        """Performs optimization using the given optimizer and a flat
+        list of parameters. Uses the cost function defined above.
+
+        Parameters
+        -------
+        optimizer
+            Optimizer method from Qiskit.algorithm.optimizers.
+        initial_params
+            Flat list of parameters.
+
+        Returns
+        -------
+        Result of the optimization.
+        """
+        return optimizer.optimize(len(initial_params), self.cost_function, initial_point=initial_params)
+
+    @staticmethod
+    def decompose_parameters(parameters: list) -> Optional[dict]:
         """Qiskit optimizations require a 1-dimension array, thus the
         params should be passed as a list. However, that makes the code
         very difficult to understand - that's why internally the params
@@ -129,8 +146,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
         """
 
         if not ((len(parameters) - 3) % 8 == 0):
-            self._logger.error('Parameter list length is not consistent. Should be groups of 11 items.')
-            return None
+            raise Exception('Parameter list length is not consistent. Should be groups of 11 items.')
 
         n = (len(parameters) - 3) // 8
         u_params = [[parameters[0]], [parameters[1]], [parameters[2]]]
@@ -151,23 +167,6 @@ class StateDiscriminativeQuantumNeuralNetworks:
             'lambda_v1': param_list[6],
             'lambda_v2': param_list[7],
         }
-
-    def discriminate(self, optimizer: Optimizer, initial_params: [float]):
-        """Performs optimization using the given optimizer and a flat
-        list of parameters. Uses the cost function defined above.
-
-        Parameters
-        -------
-        optimizer
-            Optimizer method from Qiskit.algorithm.optimizers.
-        initial_params
-            Flat list of parameters.
-
-        Returns
-        -------
-        Result of the optimization.
-        """
-        return optimizer.optimize(len(initial_params), self.cost_function, initial_point=initial_params)
 
     @staticmethod
     def get_n_element_povm(
