@@ -20,10 +20,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
 
         Parameters
         -------
-        psi
-            First quantum state
-        phi
-            Second quantum state
+        states
+            Array of quantum states
         backend
             Qiskit backend
         shots
@@ -42,88 +40,6 @@ class StateDiscriminativeQuantumNeuralNetworks:
         self._shots = shots
         self._alpha_1 = alpha_1
         self._alpha_2 = alpha_2
-
-    def get_n_element_povm(
-            self,
-            n: int,
-            theta_u: [float],
-            phi_u: [float],
-            lambda_u: [float],
-            theta1: [float],
-            theta2: [float],
-            theta_v1: [float],
-            theta_v2: [float],
-            phi_v1: [float],
-            phi_v2: [float],
-            lambda_v1: [float],
-            lambda_v2: [float],
-    ) -> QuantumCircuit:
-        """Constructor.
-        Includes the config and logger as well as the main params.
-
-        Parameters
-        -------
-        n
-            Number of elements in the circuit
-        theta_u
-            TBD
-        phi_u
-            TBD
-        lambda_u
-            TBD
-        theta1
-            TBD
-        theta2
-            TBD
-        theta_v1
-            TBD
-        theta_v2
-            TBD
-        phi_v1
-            TBD
-        phi_v2
-            TBD
-        lambda_v1
-            TBD
-        lambda_v2
-            TBD
-
-        Returns
-        -------
-        The circuit of an n-element POVM with the given parameters.
-        """
-
-        povm = QuantumCircuit(n, name='POVM_n')
-        povm.u(theta_u[0], phi_u[0], lambda_u[0], 0)
-
-        for i in range(1, n):
-            r1 = QuantumCircuit(1, name=f'R1({str(i)})')
-            r1.ry(theta1[i - 1], 0)
-            gate_r1 = r1.to_gate().control(i)
-
-            r2 = QuantumCircuit(1, name=f'R2({str(i)})')
-            r2.ry(theta2[i - 1], 0)
-            gate_r2 = r2.to_gate().control(i)
-
-            povm.x(0)
-            povm.compose(gate_r1, list(range(i + 1)), inplace=True)
-            povm.x(0)
-            povm.compose(gate_r2, list(range(i + 1)), inplace=True)
-
-            v1 = QuantumCircuit(1, name=f'V1({str(i)})')
-            v1.u(theta_v1[i - 1], phi_v1[i - 1], lambda_v1[i - 1], 0)
-            gate_v1 = v1.to_gate().control(i)
-
-            v2 = QuantumCircuit(1, name=f'V2({str(i)})')
-            v2.u(theta_v2[i - 1], phi_v2[i - 1], lambda_v2[i - 1], 0)
-            gate_v2 = v2.to_gate().control(i)
-
-            povm.x(i)
-            povm.compose(gate_v1, list(range(1, i + 1)) + [0], inplace=True)
-            povm.x(i)
-            povm.compose(gate_v2, list(range(1, i + 1)) + [0], inplace=True)
-
-        return povm
 
     def cost_function(self, params) -> float:
         """Cost function.
@@ -147,7 +63,6 @@ class StateDiscriminativeQuantumNeuralNetworks:
         circuit = self.get_n_element_povm(
             p['n'] + 1, p['theta_u'], p['phi_u'], p['lambda_u'], p['theta_1'], p['theta_2'], p['theta_v1'],
             p['theta_v2'], p['phi_v1'], p['phi_v2'], p['lambda_v1'], p['lambda_v2'])
-        
     
         n = p['n'] + 1
 
@@ -253,6 +168,80 @@ class StateDiscriminativeQuantumNeuralNetworks:
         Result of the optimization.
         """
         return optimizer.optimize(len(initial_params), self.cost_function, initial_point=initial_params)
+
+    @staticmethod
+    def get_n_element_povm(
+            n: int, theta_u: [float], phi_u: [float], lambda_u: [float], theta1: [float], theta2: [float],
+            theta_v1: [float], theta_v2: [float], phi_v1: [float], phi_v2: [float], lambda_v1: [float],
+            lambda_v2: [float]
+    ) -> QuantumCircuit:
+        """Creates the n-element POVM, using the method proposed in
+        'Implementation of a general single-qubit positive operator-valued
+        measure on a circuit-based quantum computer' by Yordanov and Barnes.
+
+        Parameters
+        -------
+        n
+            Number of modules in the POVM
+        theta_u
+            TBD
+        phi_u
+            TBD
+        lambda_u
+            TBD
+        theta1
+            TBD
+        theta2
+            TBD
+        theta_v1
+            TBD
+        theta_v2
+            TBD
+        phi_v1
+            TBD
+        phi_v2
+            TBD
+        lambda_v1
+            TBD
+        lambda_v2
+            TBD
+
+        Returns
+        -------
+        The circuit of an n-element POVM with the given parameters.
+        """
+
+        povm = QuantumCircuit(n, name='POVM_n')
+        povm.u(theta_u[0], phi_u[0], lambda_u[0], 0)
+
+        for i in range(1, n):
+            r1 = QuantumCircuit(1, name=f'R1({str(i)})')
+            r1.ry(theta1[i - 1], 0)
+            gate_r1 = r1.to_gate().control(i)
+
+            r2 = QuantumCircuit(1, name=f'R2({str(i)})')
+            r2.ry(theta2[i - 1], 0)
+            gate_r2 = r2.to_gate().control(i)
+
+            povm.x(0)
+            povm.compose(gate_r1, list(range(i + 1)), inplace=True)
+            povm.x(0)
+            povm.compose(gate_r2, list(range(i + 1)), inplace=True)
+
+            v1 = QuantumCircuit(1, name=f'V1({str(i)})')
+            v1.u(theta_v1[i - 1], phi_v1[i - 1], lambda_v1[i - 1], 0)
+            gate_v1 = v1.to_gate().control(i)
+
+            v2 = QuantumCircuit(1, name=f'V2({str(i)})')
+            v2.u(theta_v2[i - 1], phi_v2[i - 1], lambda_v2[i - 1], 0)
+            gate_v2 = v2.to_gate().control(i)
+
+            povm.x(i)
+            povm.compose(gate_v1, list(range(1, i + 1)) + [0], inplace=True)
+            povm.x(i)
+            povm.compose(gate_v2, list(range(1, i + 1)) + [0], inplace=True)
+
+        return povm
 
     @staticmethod
     def helstrom_bound(psi: np.array, phi: np.array) -> float:
