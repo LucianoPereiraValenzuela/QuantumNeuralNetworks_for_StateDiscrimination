@@ -10,6 +10,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
             self,
             psi: np.array,
             phi: np.array,
+            alpha_1: float = 0.5,
+            alpha_2: float = 0.5,
             backend: str = 'aer_simulator',
             shots: int = 2 ** 10) -> None:
         """Constructor.
@@ -38,6 +40,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
         self._phi = phi
         self._backend = backend
         self._shots = shots
+        self._alpha_1 = alpha_1
+        self._alpha_2 = alpha_2
 
     def get_n_element_povm(
             self,
@@ -144,80 +148,21 @@ class StateDiscriminativeQuantumNeuralNetworks:
             p['n'] + 1, p['theta_u'], p['phi_u'], p['lambda_u'], p['theta_1'], p['theta_2'], p['theta_v1'],
             p['theta_v2'], p['phi_v1'], p['phi_v2'], p['lambda_v1'], p['lambda_v2'])
 
-        # Create the psi circuit
-        qc_psi = QuantumCircuit(2, 1)
-        qc_psi.initialize(self._psi, 0)
-        qc_psi.barrier()
-        qc_psi.compose(circuit, [0, 1], inplace=True)
-        qc_psi.measure(1, 0)
-
-        # Create the phi circuit
-        qc_phi = QuantumCircuit(2, 1)
-        qc_phi.initialize(self._phi, 0)
-        qc_phi.barrier()
-        qc_phi.compose(circuit, [0, 1], inplace=True)
-        qc_phi.measure(1, 0)
-
-        # Create the backend
-        backend_sim = Aer.get_backend(self._backend)
-
-        # Transpile and run
-        qc_psi = transpile(qc_psi, backend_sim)
-        results_psi = backend_sim.run(qc_psi, self._shots)
-        qc_phi = transpile(qc_phi, backend_sim)
-        results_phi = backend_sim.run(qc_phi, self._shots)
-
-        # Count
-        counts_psi = results_psi.result().get_counts()
-        counts_phi = results_phi.result().get_counts()
-
-        # Get prob
-        p_1_psi = counts_psi.get('1', 0) / self._shots
-        p_0_phi = counts_phi.get('0', 0) / self._shots
-        # p_1_phi = counts_phi.get('1', 0) / shots
-        # p_0_psi = counts_psi.get('0', 0) / shots
-
-        return 0.5 * p_1_psi + 0.5 * p_0_phi
-    
-    
-    def cost_function_new(self, params) -> float:
-        """Cost function.
-
-        Parameters
-        -------
-        params
-            A flat list of all the parameters.
-
-        Returns
-        -------
-        The cost.
-        """
-
-        p = self.decompose_parameters(params)
-        if not p:
-            self._logger.error('Cannot calculate the cost function with these parameters.')
-            return 0
-
-        # Create the first circuit using get_n_element_povm
-        circuit = self.get_n_element_povm(
-            p['n'] + 1, p['theta_u'], p['phi_u'], p['lambda_u'], p['theta_1'], p['theta_2'], p['theta_v1'],
-            p['theta_v2'], p['phi_v1'], p['phi_v2'], p['lambda_v1'], p['lambda_v2'])
-        
         n = p['n'] + 1
 
         # Create the psi circuit
-        qc_psi = QuantumCircuit(n, n-1)
+        qc_psi = QuantumCircuit(n, n - 1)
         qc_psi.initialize(self._psi, 0)
         qc_psi.barrier()
-        qc_psi.compose(circuit, range(n), inplace=True)
-        qc_psi.measure( range(1,n) , range(n) )
+        qc_psi.compose(circuit, list(range(n)), inplace=True)
+        qc_psi.measure(range(1, n), list(range(n)))
 
         # Create the phi circuit
-        qc_phi = QuantumCircuit(n, n-1)
+        qc_phi = QuantumCircuit(n, n - 1)
         qc_phi.initialize(self._phi, 0)
         qc_phi.barrier()
         qc_phi.compose(circuit, range(n), inplace=True)
-        qc_psi.measure( range(1,n) , range(n) )
+        qc_psi.measure(range(1, n), range(n))
 
         # Create the backend
         backend_sim = Aer.get_backend(self._backend)
@@ -232,17 +177,25 @@ class StateDiscriminativeQuantumNeuralNetworks:
         counts_psi = results_psi.result().get_counts()
         counts_phi = results_phi.result().get_counts()
 
-        # Get prob
-        p_1_psi = counts_psi.get('01', 0) / self._shots
-        p_0_phi = counts_phi.get('00', 0) / self._shots
-        p_err   = .5 * p_1_psi + .5 * p_0_phi
-        
-        p_i_psi = counts_psi.get('11', 0) / self._shots + counts_psi.get('10', 0) / self._shots
-        p_i_phi = counts_phi.get('11', 0) / self._shots + counts_phi.get('10', 0) / self._shots
-        p_inc   = .5 * p_i_psi + .5 * p_i_phi
+        if n == 2:
+            # Get prob
+            p_1_psi = counts_psi.get('1', 0) / self._shots
+            p_0_phi = counts_phi.get('0', 0) / self._shots
+            # p_1_phi = counts_phi.get('1', 0) / shots
+            # p_0_psi = counts_psi.get('0', 0) / shots
 
-        return 0.5 * p_1_psi + 0.5 * p_0_phi
-    
+            return 0.5 * p_1_psi + 0.5 * p_0_phi
+        elif n == 3:
+            # Get prob
+            p_1_psi = counts_psi.get('01', 0) / self._shots
+            p_0_phi = counts_phi.get('00', 0) / self._shots
+            p_err = .5 * p_1_psi + .5 * p_0_phi
+
+            p_i_psi = counts_psi.get('11', 0) / self._shots + counts_psi.get('10', 0) / self._shots
+            p_i_phi = counts_phi.get('11', 0) / self._shots + counts_phi.get('10', 0) / self._shots
+            p_inc = .5 * p_i_psi + .5 * p_i_phi
+
+            return self._alpha_1 * p_err + self._alpha_2 * p_inc
 
     def decompose_parameters(self, parameters: list) -> Optional[dict]:
         """Qiskit optimizations require a 1-dimension array, thus the
@@ -293,8 +246,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
 def helstrom_bound(psi, phi):
     return 0.5 - 0.5 * np.sqrt(1 - abs(np.vdot(psi, phi)) ** 2)
 
+
 def random_quantum_state():
     z0 = np.random.randn(2) + 1j * np.random.randn(2)
     z0 = z0 / np.linalg.norm(z0)
     return z0
-
