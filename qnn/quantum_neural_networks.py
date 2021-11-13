@@ -2,6 +2,7 @@ import logging
 import numpy as np
 from qiskit import QuantumCircuit, transpile, Aer
 from qiskit.providers import Backend
+from qiskit.algorithms.optimizers import Optimizer
 from config import config
 from typing import Optional
 
@@ -236,17 +237,48 @@ class StateDiscriminativeQuantumNeuralNetworks:
             'lambda_v2': param_list[7],
         }
 
-    def discriminate(self, optimizer, initial_params):
-        return optimizer.optimize(len(initial_params),
-                                  self.cost_function,
-                                  initial_point=initial_params)
+    def discriminate(self, optimizer: Optimizer, initial_params: [float]):
+        """Performs optimization using the given optimizer and a flat
+        list of parameters. Uses the cost function defined above.
+
+        Parameters
+        -------
+        optimizer
+            Optimizer method from Qiskit.algorithm.optimizers.
+        initial_params
+            Flat list of parameters.
+
+        Returns
+        -------
+        Result of the optimization.
+        """
+        return optimizer.optimize(len(initial_params), self.cost_function, initial_point=initial_params)
 
     @staticmethod
-    def helstrom_bound(psi, phi):
+    def helstrom_bound(psi: np.array, phi: np.array) -> float:
+        """Calculates the Helstrom bound, optimal error.
+
+        Parameters
+        -------
+        psi
+            First quantum state.
+        phi
+            Second quantum state
+
+        Returns
+        -------
+        Helstrom bound
+        """
         return 0.5 - 0.5 * np.sqrt(1 - abs(np.vdot(psi, phi)) ** 2)
 
     @staticmethod
     def random_quantum_state():
+        """Creates a random quantum state.
+
+        Returns
+        -------
+        A quantum state
+        """
         z0 = np.random.randn(2) + 1j * np.random.randn(2)
         z0 = z0 / np.linalg.norm(z0)
         return z0
