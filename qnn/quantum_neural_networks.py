@@ -5,7 +5,7 @@ from config import config
 
 
 class StateDiscriminativeQuantumNeuralNetworks:
-    def __init__(self,  ψ, ϕ) -> None:
+    def __init__(self, ψ, ϕ, backend='aer_simulator', shots=2 ** 10) -> None:
         # Config
         self._config = config
         self._logger = logging.getLogger(self._config.LOG_CONFIG['name'])
@@ -17,6 +17,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
         # Parameters
         self.ψ = ψ
         self.ϕ = ϕ
+        self.backend = backend
+        self.shots = shots
 
     def get_n_element_povm(self, n, th_u, fi_u, lam_u, th1, th2, th_v1, th_v2, fi_v1, fi_v2, lam_v1, lam_v2):
         povm = QuantumCircuit(n, name='POVM_n')
@@ -51,10 +53,14 @@ class StateDiscriminativeQuantumNeuralNetworks:
 
         return povm
 
-    def cost_function(self, n, th_u, fi_u, lam_u, th1, th2, th_v1, th_v2, fi_v1, fi_v2, lam_v1, lam_v2,
-                      backend='aer_simulator', shots=2 ** 10):
+    def cost_function(self, params):
+        # Decompose params
+        n = len(params) // 11
+        th_u, fi_u, lam_u, th1, th2, th_v1, th_v2, fi_v1, fi_v2, lam_v1, lam_v2 = [params[i * n:(i + 1) * n] for i in
+                                                                                   range(len(params) // n)]
+
         # Create the first circuit using get_n_element_povm
-        circuit = self.get_n_element_povm(n, th_u, fi_u, lam_u, th1, th2, th_v1, th_v2, fi_v1, fi_v2, lam_v1, lam_v2)
+        circuit = self.get_n_element_povm(n+1, th_u, fi_u, lam_u, th1, th2, th_v1, th_v2, fi_v1, fi_v2, lam_v1, lam_v2)
 
         # Create the psi circuit
         qc_ψ = QuantumCircuit(2, 1)
@@ -71,21 +77,21 @@ class StateDiscriminativeQuantumNeuralNetworks:
         qc_ϕ.measure(1, 0)
 
         # Create the backend
-        backend_sim = Aer.get_backend(backend)
+        backend_sim = Aer.get_backend(self.backend)
 
         # Transpile and run
         qc_ψ = transpile(qc_ψ, backend_sim)
-        results_ψ = backend_sim.run(qc_ψ)
+        results_ψ = backend_sim.run(qc_ψ, self.shots)
         qc_ϕ = transpile(qc_ψ, backend_sim)
-        results_ϕ = backend_sim.run(qc_ϕ)
+        results_ϕ = backend_sim.run(qc_ϕ, self.shots)
 
         # Count
         counts_ψ = results_ψ.result().get_counts()
         counts_ϕ = results_ϕ.result().get_counts()
 
         # Get prob
-        p_1_ψ = counts_ψ.get('1', 0) / shots
-        p_0_ϕ = counts_ϕ.get('0', 0) / shots
+        p_1_ψ = counts_ψ.get('1', 0) / self.shots
+        p_0_ϕ = counts_ϕ.get('0', 0) / self.shots
         # p_1_ϕ = counts_ϕ.get('1', 0) / shots
         # p_0_ψ = counts_ψ.get('0', 0) / shots
 
