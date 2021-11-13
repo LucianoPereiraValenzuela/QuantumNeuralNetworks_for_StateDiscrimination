@@ -94,5 +94,11 @@ class StateDiscriminativeQuantumNeuralNetworks:
         p_0_ϕ = counts_ϕ.get('0', 0) / self.shots
         # p_1_ϕ = counts_ϕ.get('1', 0) / shots
         # p_0_ψ = counts_ψ.get('0', 0) / shots
-
+                
         return 0.5 * p_1_ψ + 0.5 * p_0_ϕ
+    
+    
+    
+    
+    
+    
