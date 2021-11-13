@@ -12,7 +12,7 @@ lam_v1=[pi,pi/2]
 lam_v2=[pi/2,pi]
 
 
-def povmN(th_u,fi_u,lam_u,N,th1,th2,th_v1,th_v2,fi_v1,fi_v2,lam_v1,lam_v2):
+def povmN(N,th_u,fi_u,lam_u,th1,th2,th_v1,th_v2,fi_v1,fi_v2,lam_v1,lam_v2):
     PovmN = QuantumCircuit(N,name='PovmN')
 
     PovmN.u(th_u[0],fi_u[0],lam_u[0],0)
@@ -46,5 +46,5 @@ def povmN(th_u,fi_u,lam_u,N,th1,th2,th_v1,th_v2,fi_v1,fi_v2,lam_v1,lam_v2):
         
     return PovmN
 
-POVMN=povmN(th_u,fi_u,lam_u,N,th1,th2,th_v1,th_v2,fi_v1,fi_v2,lam_v1,lam_v2)
+POVMN=povmN(N,th_u,fi_u,lam_u,th1,th2,th_v1,th_v2,fi_v1,fi_v2,lam_v1,lam_v2)
 POVMN.draw()
