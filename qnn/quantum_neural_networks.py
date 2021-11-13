@@ -2,7 +2,7 @@ import logging
 import numpy as np
 from qiskit import QuantumCircuit, transpile, Aer
 from qiskit.providers import Backend
-from config import config
+from .config import config
 from typing import Optional
 
 
@@ -240,12 +240,12 @@ class StateDiscriminativeQuantumNeuralNetworks:
                                   self.cost_function,
                                   initial_point=initial_params)
 
+    @staticmethod
+    def helstrom_bound(psi, phi):
+        return 0.5 - 0.5 * np.sqrt(1 - abs(np.vdot(psi, phi)) ** 2)
 
-def helstrom_bound(psi, phi):
-    return 0.5 - 0.5 * np.sqrt(1 - abs(np.vdot(psi, phi)) ** 2)
-
-
-def random_quantum_state():
-    z0 = np.random.randn(2) + 1j * np.random.randn(2)
-    z0 = z0 / np.linalg.norm(z0)
-    return z0
+    @staticmethod
+    def random_quantum_state():
+        z0 = np.random.randn(2) + 1j * np.random.randn(2)
+        z0 = z0 / np.linalg.norm(z0)
+        return z0
