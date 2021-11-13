@@ -151,18 +151,18 @@ class StateDiscriminativeQuantumNeuralNetworks:
         n = p['n'] + 1
 
         # Create the psi circuit
-        qc_psi = QuantumCircuit(n, n - 1)
+        qc_psi = QuantumCircuit( n, n - 1 )
         qc_psi.initialize(self._psi, 0)
         qc_psi.barrier()
         qc_psi.compose(circuit, list(range(n)), inplace=True)
-        qc_psi.measure(range(1, n), list(range(n)))
+        qc_psi.measure( range(1, n), range(n-1) )
 
         # Create the phi circuit
         qc_phi = QuantumCircuit(n, n - 1)
         qc_phi.initialize(self._phi, 0)
         qc_phi.barrier()
         qc_phi.compose(circuit, range(n), inplace=True)
-        qc_psi.measure(range(1, n), range(n))
+        qc_phi.measure( range(1, n), range(n-1) )
 
         # Create the backend
         backend_sim = Aer.get_backend(self._backend)
