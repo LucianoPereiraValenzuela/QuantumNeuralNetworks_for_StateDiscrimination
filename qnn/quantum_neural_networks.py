@@ -2,7 +2,7 @@ import logging
 import numpy as np
 from qiskit import QuantumCircuit, transpile, Aer
 from qiskit.providers import Backend
-from .config import config
+from config import config
 from typing import Optional
 
 
@@ -162,8 +162,9 @@ class StateDiscriminativeQuantumNeuralNetworks:
 
         # Transpile and run
         qc = transpile(measurements, self._backend)
-        results = self._backend.run(qc, self._shots).result().get_counts()
-
+        jobs = self._backend.run(qc, shots=self._shots)
+        results = jobs.result().get_counts()
+        
         if n == 2:        ## alpha_2 = 0
             # N_states = len(self._states) 
             # N_outcomes = N_states 
@@ -175,7 +176,9 @@ class StateDiscriminativeQuantumNeuralNetworks:
             p_0_phi = results[1].get('0', 0) / self._shots
             # p_1_phi = counts_phi.get('1', 0) / shots
             # p_0_psi = counts_psi.get('0', 0) / shots
-
+            
+            print( 0.5 * p_1_psi + 0.5 * p_0_phi )
+            
             return 0.5 * p_1_psi + 0.5 * p_0_phi
         elif n == 3:
             # N_states = len(self._states) 
