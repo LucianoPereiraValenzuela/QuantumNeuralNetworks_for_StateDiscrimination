@@ -164,7 +164,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
         # Transpile and run
         qc_psi = transpile(qc_psi, backend_sim)
         results_psi = backend_sim.run(qc_psi, self._shots)
-        qc_phi = transpile(qc_psi, backend_sim)
+        qc_phi = transpile(qc_phi, backend_sim)
         results_phi = backend_sim.run(qc_phi, self._shots)
 
         # Count
