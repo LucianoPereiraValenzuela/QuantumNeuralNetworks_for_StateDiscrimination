@@ -221,3 +221,9 @@ class StateDiscriminativeQuantumNeuralNetworks:
         return optimizer.optimize(len(initial_params),
                                   self.cost_function,
                                   initial_point=initial_params)
+
+
+
+def HelstromBound( psi, phi ):
+    return 0.5 - 0.5*np.sqrt( 1 - abs(np.vdot( psi, phi ))**2 )
+
