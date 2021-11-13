@@ -39,9 +39,9 @@ class StateDiscriminativeQuantumNeuralNetworks:
             gate_r2 = r2.to_gate().control(i)
 
             povm.x(0)
-            povm.append(gate_r1, range(i + 1))
+            povm.compose(gate_r1, list(range(i + 1)), inplace=True)
             povm.x(0)
-            povm.append(gate_r2, range(i + 1))
+            povm.compose(gate_r2, list(range(i + 1)), inplace=True)
 
             v1 = QuantumCircuit(1, name=f'V1({str(i)})')
             v1.u(th_v1[i - 1], fi_v1[i - 1], lam_v1[i - 1], 0)
@@ -52,8 +52,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
             gate_v2 = v2.to_gate().control(i)
 
             povm.x(i)
-            povm.append(gate_v1, list(range(1, i + 1)) + [0])
+            povm.compose(gate_v1, list(range(1, i + 1)) + [0], inplace=True)
             povm.x(i)
-            povm.append(gate_v2, list(range(1, i + 1)) + [0])
+            povm.compose(gate_v2, list(range(1, i + 1)) + [0], inplace=True)
 
         return povm
