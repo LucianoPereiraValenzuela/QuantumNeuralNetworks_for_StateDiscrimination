@@ -146,7 +146,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
         circuit = self.get_n_element_povm(
             p['n'] + 1, p['theta_u'], p['phi_u'], p['lambda_u'], p['theta_1'], p['theta_2'], p['theta_v1'],
             p['theta_v2'], p['phi_v1'], p['phi_v2'], p['lambda_v1'], p['lambda_v2'])
-
+        
+    
         n = p['n'] + 1
 
         measurements = []
@@ -163,8 +164,13 @@ class StateDiscriminativeQuantumNeuralNetworks:
         qc = transpile(measurements, self._backend)
         results = self._backend.run(qc, self._shots).result().get_counts()
 
-        if n == 2:
+        if n == 2:        ## alpha_2 = 0
+            # N_states = len(self._states) 
+            # N_outcomes = N_states 
+            # n == np.ceil( np.log2(N_outcomes) )
             # Get prob
+            # caso par, asignar un outcome por estado 
+            # caso impar, sobra 1 outcome. Se pueden juntar 2 outcomes en uno solo
             p_1_psi = results[0].get('1', 0) / self._shots
             p_0_phi = results[1].get('0', 0) / self._shots
             # p_1_phi = counts_phi.get('1', 0) / shots
@@ -172,6 +178,10 @@ class StateDiscriminativeQuantumNeuralNetworks:
 
             return 0.5 * p_1_psi + 0.5 * p_0_phi
         elif n == 3:
+            # N_states = len(self._states) 
+            # N_outcomes = N_states + 1 !!!!!!!!
+            # n == np.ceil( np.log2(N_outcomes) )
+            # diferenciar caso par e impar
             # Get prob
             p_1_psi = results[0].get('01', 0) / self._shots
             p_0_phi = results[1].get('00', 0) / self._shots
