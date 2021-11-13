@@ -157,8 +157,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
             qc.barrier()
             qc.compose(circuit, list(range(n)), inplace=True)
             qc.measure(range(1, n), range(n - 1))
-
             measurements.append(qc)
+
         # Transpile and run
         qc = transpile(measurements, self._backend)
         results = self._backend.run(qc, self._shots).result().get_counts()
