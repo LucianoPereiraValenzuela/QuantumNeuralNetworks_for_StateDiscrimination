@@ -11,8 +11,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
     def __init__(
             self,
             states: [np.array],
-            alpha_1: float = 0.5,
-            alpha_2: float = 0.5,
+            alpha_1: float,
+            alpha_2: float,
             backend: Backend = Aer.get_backend('aer_simulator'),
             shots: int = 2 ** 10) -> None:
         """Constructor.
@@ -61,56 +61,45 @@ class StateDiscriminativeQuantumNeuralNetworks:
 
         # Create the first circuit using get_n_element_povm
         circuit = self.get_n_element_povm(
-            p['n'] + 1, p['theta_u'], p['phi_u'], p['lambda_u'], p['theta_1'], p['theta_2'], p['theta_v1'],
+            p['n'], p['theta_u'], p['phi_u'], p['lambda_u'], p['theta_1'], p['theta_2'], p['theta_v1'],
             p['theta_v2'], p['phi_v1'], p['phi_v2'], p['lambda_v1'], p['lambda_v2'])
-    
-        n = p['n'] + 1
 
         measurements = []
         for state in self._states:
             # Create the psi circuit
-            qc = QuantumCircuit(n, n - 1)
+            qc = QuantumCircuit(p['n'], p['n'] - 1)
             qc.initialize(state, 0)
             qc.barrier()
-            qc.compose(circuit, list(range(n)), inplace=True)
-            qc.measure(range(1, n), range(n - 1))
+            qc.compose(circuit, list(range(p['n'])), inplace=True)
+            qc.measure(range(1, p['n']), range(p['n'] - 1))
             measurements.append(qc)
 
         # Transpile and run
         qc = transpile(measurements, self._backend)
         jobs = self._backend.run(qc, shots=self._shots)
         results = jobs.result().get_counts()
-        
-        if n == 2:        ## alpha_2 = 0
-            # N_states = len(self._states) 
-            # N_outcomes = N_states 
-            # n == np.ceil( np.log2(N_outcomes) )
-            # Get prob
-            # caso par, asignar un outcome por estado 
-            # caso impar, sobra 1 outcome. Se pueden juntar 2 outcomes en uno solo
-            p_1_psi = results[0].get('1', 0) / self._shots
-            p_0_phi = results[1].get('0', 0) / self._shots
-            # p_1_phi = counts_phi.get('1', 0) / shots
-            # p_0_psi = counts_psi.get('0', 0) / shots
-            
-            print( 0.5 * p_1_psi + 0.5 * p_0_phi )
-            
-            return 0.5 * p_1_psi + 0.5 * p_0_phi
-        elif n == 3:
-            # N_states = len(self._states) 
-            # N_outcomes = N_states + 1 !!!!!!!!
-            # n == np.ceil( np.log2(N_outcomes) )
-            # diferenciar caso par e impar
-            # Get prob
-            p_1_psi = results[0].get('01', 0) / self._shots
-            p_0_phi = results[1].get('00', 0) / self._shots
-            p_err = .5 * p_1_psi + .5 * p_0_phi
 
-            p_i_psi = results[0].get('11', 0) / self._shots + results[0].get('10', 0) / self._shots
-            p_i_phi = results[1].get('11', 0) / self._shots + results[1].get('10', 0) / self._shots
-            p_inc = .5 * p_i_psi + .5 * p_i_phi
+        if self._alpha_2 == 0:
+            if p['n'] != np.ceil(np.log2(len(self._states))) + 1:
+                raise Exception("Inconsistent amount of outcomes")
+            prob = 0
+            for i in range(len(self._states)):
+                prob += 1 - results[i].get(bin(i)[2:].zfill(p['n'] - 1), 0) / self._shots
+                if (i == len(self._states) - 1) and (len(self._states) % 2 == 1):
+                    prob -= results[i].get(bin(i + 1)[2:].zfill(p['n'] - 1), 0) / self._shots
+            return prob / len(self._states)
+        else:
+            if p['n'] != np.ceil(np.log2(len(self._states) + 1)) + 1:
+                raise Exception("Inconsistent amount of outcomes")
+            prob_error = 0
+            prob_inc = 0
+            for i in range(len(self._states)):
+                prob_error += 1 - results[i].get(bin(i)[2:].zfill(p['n'] - 1), 0) / self._shots
+                prob_inc += results[i].get(bin(len(self._states) - 1)[2:].zfill(p['n'] - 1), 0) / self._shots
+                if len(self._states) % 2 == 0:
+                    prob_inc += results[i].get(bin(len(self._states))[2:].zfill(p['n'] - 1), 0) / self._shots
 
-            return self._alpha_1 * p_err + self._alpha_2 * p_inc
+            return self._alpha_1 * prob_error / len(self._states) + self._alpha_2 * prob_inc / len(self._states)
 
     def decompose_parameters(self, parameters: list) -> Optional[dict]:
         """Qiskit optimizations require a 1-dimension array, thus the
@@ -138,7 +127,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
         param_list = [parameters[i * n:(i + 1) * n] for i in range(len(parameters) // n)]
 
         return {
-            'n': n,
+            'n': n + 1,
             'theta_u': u_params[0],
             'phi_u': u_params[1],
             'lambda_u': u_params[2],
@@ -243,31 +232,31 @@ class StateDiscriminativeQuantumNeuralNetworks:
 
         return povm
 
-    @staticmethod
-    def helstrom_bound(psi: np.array, phi: np.array) -> float:
-        """Calculates the Helstrom bound, optimal error.
 
-        Parameters
-        -------
-        psi
-            First quantum state.
-        phi
-            Second quantum state
+def helstrom_bound(psi: np.array, phi: np.array) -> float:
+    """Calculates the Helstrom bound, optimal error.
 
-        Returns
-        -------
-        Helstrom bound
-        """
-        return 0.5 - 0.5 * np.sqrt(1 - abs(np.vdot(psi, phi)) ** 2)
+    Parameters
+    -------
+    psi
+        First quantum state.
+    phi
+        Second quantum state
 
-    @staticmethod
-    def random_quantum_state():
-        """Creates a random quantum state.
+    Returns
+    -------
+    Helstrom bound
+    """
+    return 0.5 - 0.5 * np.sqrt(1 - abs(np.vdot(psi, phi)) ** 2)
 
-        Returns
-        -------
-        A quantum state
-        """
-        z0 = np.random.randn(2) + 1j * np.random.randn(2)
-        z0 = z0 / np.linalg.norm(z0)
-        return z0
+
+def random_quantum_state():
+    """Creates a random quantum state.
+
+    Returns
+    -------
+    A quantum state
+    """
+    z0 = np.random.randn(2) + 1j * np.random.randn(2)
+    z0 = z0 / np.linalg.norm(z0)
+    return z0
