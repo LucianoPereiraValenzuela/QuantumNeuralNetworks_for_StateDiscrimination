@@ -84,7 +84,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
         for i in range(len(self._states)):
             for single_state in self._states[i].states:
                 qc = QuantumCircuit(p['n'], p['n'] - 1)
-                qc.initialize(single_state, 0)  # TODO: Iterar sobre la lista de QuantumState
+                qc.initialize(single_state, 0)
                 qc.barrier()
                 qc.compose(circuit, list(range(p['n'])), inplace=True)
                 qc.measure(range(1, p['n']), range(p['n'] - 1))
