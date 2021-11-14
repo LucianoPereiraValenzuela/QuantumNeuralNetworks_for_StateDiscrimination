@@ -7,10 +7,24 @@ from config import config
 from typing import Optional
 
 
+class QuantumState:
+    def __init__(self, states: [np.array], probabilities: Optional[float] = None) -> None:
+        self._probabilities = [1/len(states)] * len(states) if probabilities is None else probabilities
+        self._states = states
+
+    @property
+    def probabilities(self):
+        return self._probabilities
+
+    @property
+    def states(self):
+        return self._states
+
+
 class StateDiscriminativeQuantumNeuralNetworks:
     def __init__(
             self,
-            states: [np.array],
+            states: [QuantumState],
             alpha_1: float,
             alpha_2: float,
             backend: Backend = Aer.get_backend('aer_simulator'),
@@ -64,10 +78,11 @@ class StateDiscriminativeQuantumNeuralNetworks:
             p['theta_v2'], p['phi_v1'], p['phi_v2'], p['lambda_v1'], p['lambda_v2'])
 
         measurements = []
-        for state in self._states:
+        for quantum_state in self._states:
+
             # Create the psi circuit
             qc = QuantumCircuit(p['n'], p['n'] - 1)
-            qc.initialize(state, 0)
+            qc.initialize(quantum_state.states[0], 0)  # TODO: Iterar sobre la lista de QuantumState
             qc.barrier()
             qc.compose(circuit, list(range(p['n'])), inplace=True)
             qc.measure(range(1, p['n']), range(p['n'] - 1))
@@ -231,31 +246,35 @@ class StateDiscriminativeQuantumNeuralNetworks:
 
         return povm
 
+    @staticmethod
+    def helstrom_bound(psi: np.array, phi: np.array) -> float:
+        """Calculates the Helstrom bound, optimal error.
 
-def helstrom_bound(psi: np.array, phi: np.array) -> float:
-    """Calculates the Helstrom bound, optimal error.
+        Parameters
+        -------
+        psi
+            First quantum state.
+        phi
+            Second quantum state
 
-    Parameters
-    -------
-    psi
-        First quantum state.
-    phi
-        Second quantum state
+        Returns
+        -------
+        Helstrom bound
+        """
+        return 0.5 - 0.5 * np.sqrt(1 - abs(np.vdot(psi, phi)) ** 2)
 
-    Returns
-    -------
-    Helstrom bound
-    """
-    return 0.5 - 0.5 * np.sqrt(1 - abs(np.vdot(psi, phi)) ** 2)
+    @staticmethod
+    def random_quantum_state(n: int = 1):
+        """Creates a random quantum state.
 
+        Returns
+        -------
+        A quantum state
+        """
+        states = list()
+        for _ in list(range(n)):
+            z0 = np.random.randn(2) + 1j * np.random.randn(2)
+            z0 = z0 / np.linalg.norm(z0)
+            states.append(z0)
 
-def random_quantum_state():
-    """Creates a random quantum state.
-
-    Returns
-    -------
-    A quantum state
-    """
-    z0 = np.random.randn(2) + 1j * np.random.randn(2)
-    z0 = z0 / np.linalg.norm(z0)
-    return z0
+        return QuantumState(states=states)
