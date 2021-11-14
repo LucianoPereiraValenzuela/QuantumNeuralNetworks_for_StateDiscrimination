@@ -146,11 +146,15 @@ class StateDiscriminativeQuantumNeuralNetworks:
         """
 
         if not ((len(parameters) - 3) % 8 == 0):
-            raise Exception('Parameter list length is not consistent. Should be groups of 11 items.')
+            raise Exception(
+                'Parameter list length is not consistent. Should be three elements plus n groups of eight items.')
 
-        n = (len(parameters) - 3) // 8
+        # First three params belong to the U gate
         u_params = [[parameters[0]], [parameters[1]], [parameters[2]]]
+
+        # Rest of the list represent the multiple theta1, theta2, V1 and V2 gates
         parameters = parameters[3:]
+        n = len(parameters) // 8
         param_list = [parameters[i * n:(i + 1) * n] for i in range(len(parameters) // n)]
 
         return {
@@ -256,7 +260,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
         return 0.5 - 0.5 * np.sqrt(1 - abs(np.vdot(psi, phi)) ** 2)
 
     @staticmethod
-    def random_quantum_state():
+    def random_quantum_state() -> np.array:
         """Creates a random quantum state.
 
         Returns
