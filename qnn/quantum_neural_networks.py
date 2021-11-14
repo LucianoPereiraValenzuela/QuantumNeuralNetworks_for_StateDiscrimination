@@ -25,8 +25,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
     def __init__(
             self,
             states: [QuantumState],
-            alpha_1: float,
-            alpha_2: float,
+            alpha_1: float = 1.,
+            alpha_2: float = 0.,
             backend: Backend = Aer.get_backend('aer_simulator'),
             shots: int = 2 ** 10) -> None:
         """Constructor.
@@ -55,7 +55,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
         self._alpha_1 = alpha_1
         self._alpha_2 = alpha_2
 
-    def cost_function(self, params) -> float:
+    def cost_function(self, params , callback = None ) -> float:
         """Cost function.
 
         Parameters
@@ -77,45 +77,60 @@ class StateDiscriminativeQuantumNeuralNetworks:
             p['n'], p['theta_u'], p['phi_u'], p['lambda_u'], p['theta_1'], p['theta_2'], p['theta_v1'],
             p['theta_v2'], p['phi_v1'], p['phi_v2'], p['lambda_v1'], p['lambda_v2'])
 
-        measurements = []
-        for quantum_state in self._states:
-
-            # Create the psi circuit
-            qc = QuantumCircuit(p['n'], p['n'] - 1)
-            qc.initialize(quantum_state.states[0], 0)  # TODO: Iterar sobre la lista de QuantumState
-            qc.barrier()
-            qc.compose(circuit, list(range(p['n'])), inplace=True)
-            qc.measure(range(1, p['n']), range(p['n'] - 1))
-            measurements.append(qc)
+        # Create circuit
+        circuit_measurements = []
+        label = []
+        n_noisy = []
+        for i in range(len(self._states)):
+            for single_state in self._states[i].states :
+                qc = QuantumCircuit(p['n'], p['n'] - 1)
+                qc.initialize(single_state, 0)  # TODO: Iterar sobre la lista de QuantumState
+                qc.barrier()
+                qc.compose(circuit, list(range(p['n'])), inplace=True)
+                qc.measure(range(1, p['n']), range(p['n'] - 1))
+                circuit_measurements.append(qc)
+                label.append( bin(i)[2:].zfill(p['n'] - 1 ) )
+                n_noisy.append( len(self._states[i].states) )
 
         # Transpile and run
-        qc = transpile(measurements, self._backend)
-        jobs = self._backend.run(qc, shots=self._shots)
+        circuit_measurements = transpile(circuit_measurements, self._backend)
+        jobs = self._backend.run(circuit_measurements, shots=self._shots)
         results = jobs.result().get_counts()
 
         if self._alpha_2 == 0:
             if p['n'] != np.ceil(np.log2(len(self._states))) + 1:
                 raise Exception("Inconsistent amount of outcomes")
-            prob = 0
-            for i in range(len(self._states)):
-                prob += 1 - results[i].get(bin(i)[2:].zfill(p['n'] - 1), 0) / self._shots
-                if (i == len(self._states) - 1) and (len(self._states) % 2 == 1):
-                    prob -= results[i].get(bin(i + 1)[2:].zfill(p['n'] - 1), 0) / self._shots
-            return prob / len(self._states)
+                
+            prob_error = 0
+            for i in range( len(circuit_measurements) ):
+                prob_error += ( 1 - results[i].get(label[i], 0) /  self._shots ) / n_noisy[i] 
+                if label[i]==label[-1] and (len(self._states) % 2 == 1):
+                    prob_error -= results[i].get( '1'*(p['n']-1) , 0) / ( n_noisy[i] * self._shots )
+            prob_error = prob_error / len(self._states)
+            prob_inc   = 0
+            prob       = prob_error
         else:
             if p['n'] != np.ceil(np.log2(len(self._states) + 1)) + 1:
                 raise Exception("Inconsistent amount of outcomes")
             prob_error = 0
             prob_inc = 0
-            for i in range(len(self._states)):
-                prob_error += 1 - results[i].get(bin(i)[2:].zfill(p['n'] - 1), 0) / self._shots
-                prob_inc += results[i].get(bin(len(self._states) - 1)[2:].zfill(p['n'] - 1), 0) / self._shots
+            for i in range( len(circuit_measurements) ):
+                prob_error += ( 1 - results[i].get(label[i], 0) / self._shots ) / n_noisy[i] 
+                prob_inc += results[i].get(bin(len(self._states) - 1)[2:].zfill(p['n'] - 1), 0
+                                           ) / ( n_noisy[i] * self._shots )
                 if len(self._states) % 2 == 0:
-                    prob_inc += results[i].get(bin(len(self._states))[2:].zfill(p['n'] - 1), 0) / self._shots
+                    prob_inc += results[i].get(bin(len(self._states))[2:].zfill(p['n'] - 1), 0
+                                               ) / ( n_noisy[i] * self._shots )
+            prob_error = prob_error / len(self._states)
+            prob_inc   = prob_inc / len(self._states)
+            prob       = self._alpha_1 * prob_error  + self._alpha_2 * prob_inc
+        
+        if callback is not None:
+            callback( prob_error, prob_inc, prob )
+            
+        return prob
 
-            return self._alpha_1 * prob_error / len(self._states) + self._alpha_2 * prob_inc / len(self._states)
-
-    def discriminate(self, optimizer: Optimizer, initial_params: [float]):
+    def discriminate(self, optimizer: Optimizer, initial_params: [float], callback = None  ):
         """Performs optimization using the given optimizer and a flat
         list of parameters. Uses the cost function defined above.
 
@@ -130,7 +145,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
         -------
         Result of the optimization.
         """
-        return optimizer.optimize(len(initial_params), self.cost_function, initial_point=initial_params)
+        fun = lambda params : self.cost_function( params , callback )
+        return optimizer.optimize(len(initial_params), fun , initial_point=initial_params)
 
     @staticmethod
     def decompose_parameters(parameters: list) -> Optional[dict]:
@@ -247,7 +263,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
         return povm
 
     @staticmethod
-    def helstrom_bound(psi: np.array, phi: np.array) -> float:
+    def helstrom_bound(psi: QuantumState, phi: np.array) -> float:
         """Calculates the Helstrom bound, optimal error.
 
         Parameters
@@ -261,7 +277,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
         -------
         Helstrom bound
         """
-        return 0.5 - 0.5 * np.sqrt(1 - abs(np.vdot(psi, phi)) ** 2)
+        return 0.5 - 0.5 * np.sqrt(1 - abs(np.vdot(psi.states[0], 
+                                                   phi.states[0])) ** 2)
 
     @staticmethod
     def random_quantum_state(n: int = 1):
