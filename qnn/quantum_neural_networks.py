@@ -13,12 +13,41 @@ class QuantumState:
         self._states = states
 
     @property
-    def probabilities(self):
+    def probabilities(self) -> [float]:
         return self._probabilities
 
     @property
-    def states(self):
+    def states(self) -> [np.array]:
         return self._states
+
+    @staticmethod
+    def random(n: int = 1):
+        """Creates a QuantumState object with n random quantum states.
+
+        Parameters
+        -------
+        n
+            Number of states
+
+        Returns
+        -------
+        A quantum state
+        """
+        if not isinstance(n, int):
+            n = 1
+
+        return QuantumState(states=[QuantumState.normalized_random_array() for _ in list(range(n))])
+
+    @staticmethod
+    def normalized_random_array() -> np.array:
+        """Helper method. Creates a random numpy array and normalizes it.
+
+        Returns
+        -------
+        Random normalized numpy array.
+        """
+        z0 = np.random.randn(2) + 1j * np.random.randn(2)
+        return z0 / np.linalg.norm(z0)
 
 
 class StateDiscriminativeQuantumNeuralNetworks:
@@ -148,12 +177,11 @@ class StateDiscriminativeQuantumNeuralNetworks:
         -------
         Result of the optimization.
         """
-        return optimizer.optimize(len(initial_params),
-                                  lambda params: self.cost_function(params, callback),
-                                  initial_point=initial_params)
+        return optimizer.optimize(
+            len(initial_params), lambda params: self.cost_function(params, callback), initial_point=initial_params)
 
     @staticmethod
-    def decompose_parameters(parameters: list) -> Optional[dict]:
+    def decompose_parameters(flat_params: list) -> Optional[dict]:
         """Qiskit optimizations require a 1-dimension array, thus the
         params should be passed as a list. However, that makes the code
         very difficult to understand - that's why internally the params
@@ -161,23 +189,24 @@ class StateDiscriminativeQuantumNeuralNetworks:
 
         Parameters
         -------
-        parameters
+        flat_params
             List with all the required parameters
 
         Returns
         -------
         A dictionary with the parameters or None
         """
+        if not isinstance(flat_params, list):
+            raise Exception('Input parameter should be a list')
 
-        if not ((len(parameters) - 3) % 8 == 0):
-            raise Exception(
-                'Parameter list length is not consistent. Should be three elements plus n groups of eight items.')
+        if not (len(flat_params) - 3) % 8 == 0:
+            raise Exception('Input length is not consistent. Should be three elements plus n groups of eight items.')
 
         # First three params belong to the U gate
-        u_params = [[parameters[0]], [parameters[1]], [parameters[2]]]
+        u_params = [[flat_params[0]], [flat_params[1]], [flat_params[2]]]
 
         # Rest of the list represent the multiple theta1, theta2, V1 and V2 gates
-        parameters = parameters[3:]
+        parameters = flat_params[3:]
         n = len(parameters) // 8
         param_list = [parameters[i * n:(i + 1) * n] for i in range(len(parameters) // n)]
 
@@ -281,8 +310,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
         -------
         Helstrom bound
         """
-        return 0.5 - 0.5 * np.sqrt(1 - abs(np.vdot(psi.states[0],
-                                                   phi.states[0])) ** 2)
+        return 0.5 - 0.5 * np.sqrt(1 - abs(np.vdot(psi.states[0], phi.states[0])) ** 2)
 
     @staticmethod
     def random_quantum_state(n: int = 1):
