@@ -8,15 +8,13 @@ from ..quantum_neural_networks import StateDiscriminativeQuantumNeuralNetworks
 class TestStateDiscriminativeQuantumNeuralNetworks:
 
     def instance_test(self):
-        psi = [0]
-        phi = [0]
+        states = [0, 0]
         alpha_1 = 0.1
         alpha_2 = 0.1
 
-        qnn = StateDiscriminativeQuantumNeuralNetworks(psi, phi, alpha_1, alpha_2)
+        qnn = StateDiscriminativeQuantumNeuralNetworks(states, alpha_1, alpha_2)
 
-        assert qnn._psi is psi
-        assert qnn._phi is phi
+        assert qnn._states is states
         assert qnn._alpha_1 is alpha_1
         assert qnn._alpha_2 is alpha_2
 

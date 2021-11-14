@@ -56,8 +56,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
 
         p = self.decompose_parameters(params)
         if not p:
-            self._logger.error('Cannot calculate the cost function with these parameters.')
-            return 0
+            raise Exception('Cannot calculate the cost function with these parameters.')
 
         # Create the first circuit using get_n_element_povm
         circuit = self.get_n_element_povm(
@@ -101,46 +100,6 @@ class StateDiscriminativeQuantumNeuralNetworks:
 
             return self._alpha_1 * prob_error / len(self._states) + self._alpha_2 * prob_inc / len(self._states)
 
-    def decompose_parameters(self, parameters: list) -> Optional[dict]:
-        """Qiskit optimizations require a 1-dimension array, thus the
-        params should be passed as a list. However, that makes the code
-        very difficult to understand - that's why internally the params
-        are decomposed.
-
-        Parameters
-        -------
-        parameters
-            List with all the required parameters
-
-        Returns
-        -------
-        A dictionary with the parameters or None
-        """
-
-        if not ((len(parameters) - 3) % 8 == 0):
-            self._logger.error('Parameter list length is not consistent. Should be groups of 11 items.')
-            return None
-
-        n = (len(parameters) - 3) // 8
-        u_params = [[parameters[0]], [parameters[1]], [parameters[2]]]
-        parameters = parameters[3:]
-        param_list = [parameters[i * n:(i + 1) * n] for i in range(len(parameters) // n)]
-
-        return {
-            'n': n + 1,
-            'theta_u': u_params[0],
-            'phi_u': u_params[1],
-            'lambda_u': u_params[2],
-            'theta_1': param_list[0],
-            'theta_2': param_list[1],
-            'theta_v1': param_list[2],
-            'theta_v2': param_list[3],
-            'phi_v1': param_list[4],
-            'phi_v2': param_list[5],
-            'lambda_v1': param_list[6],
-            'lambda_v2': param_list[7],
-        }
-
     def discriminate(self, optimizer: Optimizer, initial_params: [float]):
         """Performs optimization using the given optimizer and a flat
         list of parameters. Uses the cost function defined above.
@@ -159,6 +118,50 @@ class StateDiscriminativeQuantumNeuralNetworks:
         return optimizer.optimize(len(initial_params), self.cost_function, initial_point=initial_params)
 
     @staticmethod
+    def decompose_parameters(parameters: list) -> Optional[dict]:
+        """Qiskit optimizations require a 1-dimension array, thus the
+        params should be passed as a list. However, that makes the code
+        very difficult to understand - that's why internally the params
+        are decomposed.
+
+        Parameters
+        -------
+        parameters
+            List with all the required parameters
+
+        Returns
+        -------
+        A dictionary with the parameters or None
+        """
+
+        if not ((len(parameters) - 3) % 8 == 0):
+            raise Exception(
+                'Parameter list length is not consistent. Should be three elements plus n groups of eight items.')
+
+        # First three params belong to the U gate
+        u_params = [[parameters[0]], [parameters[1]], [parameters[2]]]
+
+        # Rest of the list represent the multiple theta1, theta2, V1 and V2 gates
+        parameters = parameters[3:]
+        n = len(parameters) // 8
+        param_list = [parameters[i * n:(i + 1) * n] for i in range(len(parameters) // n)]
+
+        return {
+            'n': n + 1,
+            'theta_u': u_params[0],
+            'phi_u': u_params[1],
+            'lambda_u': u_params[2],
+            'theta_1': param_list[0],
+            'theta_2': param_list[1],
+            'theta_v1': param_list[2],
+            'theta_v2': param_list[3],
+            'phi_v1': param_list[4],
+            'phi_v2': param_list[5],
+            'lambda_v1': param_list[6],
+            'lambda_v2': param_list[7],
+        }
+
+    @staticmethod
     def get_n_element_povm(
             n: int, theta_u: [float], phi_u: [float], lambda_u: [float], theta1: [float], theta2: [float],
             theta_v1: [float], theta_v2: [float], phi_v1: [float], phi_v2: [float], lambda_v1: [float],
@@ -173,27 +176,23 @@ class StateDiscriminativeQuantumNeuralNetworks:
         n
             Number of modules in the POVM
         theta_u
-            TBD
         phi_u
-            TBD
         lambda_u
-            TBD
+            Angles of the U gate. There's one single U gate in the circuit.
         theta1
-            TBD
+            Angles of the first theta gate. Array - one angle for gate,
+            one gate for module. There are n theta1 gates in the circuit.
         theta2
-            TBD
+            Angles of the second theta gate. Array - one angle for gate,
+            one gate for module. There are n theta2 gates in the circuit.
         theta_v1
-            TBD
-        theta_v2
-            TBD
         phi_v1
-            TBD
-        phi_v2
-            TBD
         lambda_v1
-            TBD
+            Angles of the V1 gate. There are n V1 gates in the circuit.
+        theta_v2
+        phi_v2
         lambda_v2
-            TBD
+            Angles of the V2 gate. There are n V2 gates in the circuit.
 
         Returns
         -------
