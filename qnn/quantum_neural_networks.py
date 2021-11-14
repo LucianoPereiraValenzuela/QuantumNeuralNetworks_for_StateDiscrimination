@@ -140,13 +140,16 @@ class StateDiscriminativeQuantumNeuralNetworks:
             Optimizer method from Qiskit.algorithm.optimizers.
         initial_params
             Flat list of parameters.
+        callback
+            TBD
 
         Returns
         -------
         Result of the optimization.
         """
-        fun = lambda params: self.cost_function(params, callback)
-        return optimizer.optimize(len(initial_params), fun, initial_point=initial_params)
+        return optimizer.optimize(len(initial_params),
+                                  lambda params: self.cost_function(params, callback),
+                                  initial_point=initial_params)
 
     @staticmethod
     def decompose_parameters(parameters: list) -> Optional[dict]:
