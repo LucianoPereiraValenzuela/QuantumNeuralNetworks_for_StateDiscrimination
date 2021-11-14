@@ -183,27 +183,23 @@ class StateDiscriminativeQuantumNeuralNetworks:
         n
             Number of modules in the POVM
         theta_u
-            TBD
         phi_u
-            TBD
         lambda_u
-            TBD
+            Angles of the U gate. There's one single U gate in the circuit.
         theta1
-            TBD
+            Angles of the first theta gate. Array - one angle for gate,
+            one gate for module. There are n theta1 gates in the circuit.
         theta2
-            TBD
+            Angles of the second theta gate. Array - one angle for gate,
+            one gate for module. There are n theta2 gates in the circuit.
         theta_v1
-            TBD
-        theta_v2
-            TBD
         phi_v1
-            TBD
-        phi_v2
-            TBD
         lambda_v1
-            TBD
+            Angles of the V1 gate. There are n V1 gates in the circuit.
+        theta_v2
+        phi_v2
         lambda_v2
-            TBD
+            Angles of the V2 gate. There are n V2 gates in the circuit.
 
         Returns
         -------
