@@ -62,7 +62,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
         -------
         params
             A flat list of all the parameters.
-
+        callback
+            TBD
         Returns
         -------
         The cost.
