@@ -93,8 +93,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
         params
             A flat list of all the parameters.
         callback
-            A function that can access the intermediate data during the optimization.
-            The function have to have inputs the the parameters, the qiskit results,
+            A function to access to the intermediate data during the optimization.
+            The function have to have as inputs the parameters, the qiskit results,
             the error probability, the inconclusive probablitity, and the objective function.
         Returns
         -------
@@ -176,8 +176,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
         initial_params
             Flat list of parameters.
         callback
-            A function that can access the intermediate data during the optimization.
-            The function have to have inputs the the parameters, the qiskit results,
+            A function to access to the intermediate data during the optimization.
+            The function have to have as inputs the parameters, the qiskit results (dict of counts),
             the error probability, the inconclusive probablitity, and the objective function.
 
         Returns
