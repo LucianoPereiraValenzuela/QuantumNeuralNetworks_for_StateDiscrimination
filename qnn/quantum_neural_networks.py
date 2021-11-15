@@ -70,9 +70,9 @@ class StateDiscriminativeQuantumNeuralNetworks:
         inc_outcome
             Bool to include an inconclusive outcome
         alpha_1
-            Ponderation of the error probability
+            Weight of the error probability
         alpha_2
-            Ponderation of the inconclusive probability
+            Weight of the inconclusive probability
         backend
             Qiskit backend
         shots
@@ -93,7 +93,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
         self._alpha_1 = alpha_1
         self._alpha_2 = alpha_2
 
-    def cost_function(self, params, callback: Optional[Callable]=None) -> float:
+    def cost_function(self, params, callback: Optional[Callable] = None) -> float:
         """Cost function.
 
         Parameters
@@ -103,7 +103,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
         callback
             A function to access to the intermediate data during the optimization.
             The function have to have as inputs the parameters, the qiskit results,
-            the error probability, the inconclusive probablitity, and the objective function.
+            the error probability, the inconclusive probability, and the objective function.
         Returns
         -------
         The cost.
@@ -156,18 +156,18 @@ class StateDiscriminativeQuantumNeuralNetworks:
             prob_error = 0
             prob_inc = 0
             for i in range(len(circuit_measurements)):
-                prob_error += (1 - ( results[i].get(label[i], 0) 
-                                    + results[i].get( bin(len(self._states))[2:].zfill(p['n'] - 1), 0)
-                                    ) / self._shots ) / n_noisy[i]
-             
+                prob_error += (1 - (results[i].get(label[i], 0)
+                                    + results[i].get(bin(len(self._states))[2:].zfill(p['n'] - 1), 0)
+                                    ) / self._shots) / n_noisy[i]
+
                 prob_inc += results[i].get(bin(len(self._states))[2:].zfill(p['n'] - 1), 0
                                            ) / (n_noisy[i] * self._shots)
                 if len(self._states) % 2 == 0:
-                    prob_error -= results[i].get(bin(len(self._states)+1)[2:].zfill(p['n'] - 1), 0
+                    prob_error -= results[i].get(bin(len(self._states) + 1)[2:].zfill(p['n'] - 1), 0
+                                                 ) / (n_noisy[i] * self._shots)
+                    prob_inc += results[i].get(bin(len(self._states) + 1)[2:].zfill(p['n'] - 1), 0
                                                ) / (n_noisy[i] * self._shots)
-                    prob_inc   += results[i].get(bin(len(self._states)+1)[2:].zfill(p['n'] - 1), 0
-                                               ) / (n_noisy[i] * self._shots)
-                    
+
             prob_error = prob_error / len(self._states)
             prob_inc = prob_inc / len(self._states)
             prob = self._alpha_1 * prob_error + self._alpha_2 * prob_inc
@@ -177,7 +177,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
 
         return prob
 
-    def discriminate(self, optimizer: Optimizer, initial_params: [float], callback: Optional[Callable] = None ):
+    def discriminate(self, optimizer: Optimizer, initial_params: [float], callback: Optional[Callable] = None):
         """Performs optimization using the given optimizer and a flat
         list of parameters. Uses the cost function defined above.
 
@@ -190,7 +190,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
         callback
             A function to access to the intermediate data during the optimization.
             The function have to have as inputs the parameters, the qiskit results (dict of counts),
-            the error probability, the inconclusive probablitity, and the objective function.
+            the error probability, the inconclusive probability, and the objective function.
 
         Returns
         -------
@@ -200,7 +200,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
             len(initial_params), lambda params: self.cost_function(params, callback), initial_point=initial_params)
 
     @staticmethod
-    def decompose_parameters( flat_params: [list, np.array] ) -> Optional[dict]:
+    def decompose_parameters(flat_params: [list, np.array]) -> Optional[dict]:
         """Qiskit optimizations require a 1-dimension array, thus the
         params should be passed as a list. However, that makes the code
         very difficult to understand - that's why internally the params
