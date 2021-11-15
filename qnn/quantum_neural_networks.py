@@ -55,6 +55,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
     def __init__(
             self,
             states: [QuantumState],
+            inc_outcome: bool = False,
             alpha_1: float = 1.,
             alpha_2: float = 0.,
             backend: Backend = Aer.get_backend('aer_simulator'),
@@ -66,6 +67,12 @@ class StateDiscriminativeQuantumNeuralNetworks:
         -------
         states
             Array of quantum states
+        inc_outcome
+            Bool to include an inconclusive outcome
+        alpha_1
+            Ponderation of the error probability
+        alpha_2
+            Ponderation of the inconclusive probability
         backend
             Qiskit backend
         shots
@@ -82,6 +89,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
         self._states = states
         self._backend = backend
         self._shots = shots
+        self._inc_outcome = inc_outcome
         self._alpha_1 = alpha_1
         self._alpha_2 = alpha_2
 
@@ -130,7 +138,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
         jobs = self._backend.run(circuit_measurements, shots=self._shots)
         results = jobs.result().get_counts()
 
-        if self._alpha_2 == 0:
+        if self._inc_outcome is False:
             if p['n'] != np.ceil(np.log2(len(self._states))) + 1:
                 raise Exception("Inconsistent amount of outcomes")
 
@@ -149,13 +157,17 @@ class StateDiscriminativeQuantumNeuralNetworks:
             prob_inc = 0
             for i in range(len(circuit_measurements)):
                 prob_error += (1 - ( results[i].get(label[i], 0) 
-                                    + results[i].get( bin(len(self._states)-1)[2:].zfill(p['n'] - 1), 0)
+                                    + results[i].get( bin(len(self._states))[2:].zfill(p['n'] - 1), 0)
                                     ) / self._shots ) / n_noisy[i]
-                prob_inc += results[i].get(bin(len(self._states) - 1)[2:].zfill(p['n'] - 1), 0
+             
+                prob_inc += results[i].get(bin(len(self._states))[2:].zfill(p['n'] - 1), 0
                                            ) / (n_noisy[i] * self._shots)
                 if len(self._states) % 2 == 0:
-                    prob_inc += results[i].get(bin(len(self._states))[2:].zfill(p['n'] - 1), 0
+                    prob_error -= results[i].get(bin(len(self._states)+1)[2:].zfill(p['n'] - 1), 0
                                                ) / (n_noisy[i] * self._shots)
+                    prob_inc   += results[i].get(bin(len(self._states)+1)[2:].zfill(p['n'] - 1), 0
+                                               ) / (n_noisy[i] * self._shots)
+                    
             prob_error = prob_error / len(self._states)
             prob_inc = prob_inc / len(self._states)
             prob = self._alpha_1 * prob_error + self._alpha_2 * prob_inc
