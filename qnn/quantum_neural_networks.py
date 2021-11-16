@@ -1,54 +1,14 @@
-from typing import Callable
 import logging
-import numpy as np
-from qiskit import QuantumCircuit, transpile, Aer
-from qiskit.providers import Backend
-from qiskit.algorithms.optimizers import Optimizer
-from config import config
+from typing import Callable
 from typing import Optional
 
+import numpy as np
+from qiskit import QuantumCircuit, transpile, Aer
+from qiskit.algorithms.optimizers import Optimizer
+from qiskit.providers import Backend
 
-class QuantumState:
-    def __init__(self, states: [np.array], probabilities: Optional[float] = None) -> None:
-        self._probabilities = [1 / len(states)] * len(states) if probabilities is None else probabilities
-        self._states = states
-
-    @property
-    def probabilities(self) -> [float]:
-        return self._probabilities
-
-    @property
-    def states(self) -> [np.array]:
-        return self._states
-
-    @staticmethod
-    def random(n: int = 1):
-        """Creates a QuantumState object with n random quantum states.
-
-        Parameters
-        -------
-        n
-            Number of states
-
-        Returns
-        -------
-        A quantum state
-        """
-        if not isinstance(n, int):
-            n = 1
-
-        return QuantumState(states=[QuantumState.normalized_random_array() for _ in list(range(n))])
-
-    @staticmethod
-    def normalized_random_array() -> np.array:
-        """Helper method. Creates a random numpy array and normalizes it.
-
-        Returns
-        -------
-        Random normalized numpy array.
-        """
-        z0 = np.random.randn(2) + 1j * np.random.randn(2)
-        return z0 / np.linalg.norm(z0)
+from config import config
+from quantum_state import QuantumState
 
 
 class StateDiscriminativeQuantumNeuralNetworks:
@@ -330,19 +290,3 @@ class StateDiscriminativeQuantumNeuralNetworks:
         Helstrom bound
         """
         return 0.5 - 0.5 * np.sqrt(1 - abs(np.vdot(psi.states[0], phi.states[0])) ** 2)
-
-    @staticmethod
-    def random_quantum_state(n: int = 1):
-        """Creates a random quantum state.
-
-        Returns
-        -------
-        A quantum state
-        """
-        states = list()
-        for _ in list(range(n)):
-            z0 = np.random.randn(2) + 1j * np.random.randn(2)
-            z0 = z0 / np.linalg.norm(z0)
-            states.append(z0)
-
-        return QuantumState(states=states)
