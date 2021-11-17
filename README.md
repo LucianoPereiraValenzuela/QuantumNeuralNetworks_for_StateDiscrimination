@@ -37,6 +37,7 @@ Github repository with the code and notebooks with examples of the usage.
 - [Test Parameter Decomposition](qnn/tests/test_parameter_decompose.ipynb): Tests the decomposition of the parameters of the POVM circuits for two and three elements.
 - [Test Discrimination with Inconclusive Outcome](qnn/tests/test_discrimination_with_inconclusive_outcome.ipynb): Tests the evolution of the error probability when the inconclusiveness probability is added in the cost function.
 - [Test Minimum Error Discrimination](qnn/tests/test_minimum_error_discrimination.ipynb): Tests the evolution of the error probability with the number of evaluations.
+- [Test Optimizers Performance](qnn/tests/test_optimizer.ipynb): Tests how different optimizers such as SPSA, ADAM or COBYLA behave when doing state discrimination.
 
 ### Full experiments
  
