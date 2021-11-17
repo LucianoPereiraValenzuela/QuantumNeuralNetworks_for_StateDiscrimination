@@ -45,7 +45,7 @@ Github repository with the code and notebooks with examples of the usage.
 https://user-images.githubusercontent.com/31738826/142266521-7c95252d-3eb8-493f-8282-c36ad0e85d7d.mp4
 
 - [Comparison with the Helstrom Bound](qnn/results/Comparison_HelstromBound.ipynb): Compares our results with the Helstrom Bound, which is the theoretical minimum-error probability there is when discriminating two non-orthogonal quantum states.
-- [Experiment of our program in a real quantum computer](qnn/results/experiment_minimum_error.ipynb)
+- [Experiment of our program in a real quantum computer](qnn/results/experiment_minimum_error.ipynb): We run the training of a minimum-error discriminator on the IBM quantum device "ibmq_guadalupe".
 
 Tests
 
