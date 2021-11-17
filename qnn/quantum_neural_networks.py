@@ -370,7 +370,8 @@ class StateDiscriminativeQuantumNeuralNetworks:
         vecs = QuantumState.get_bloch_vector(povm)
         vecs_states = []
         for state in states:
-            vecs_states.append( QuantumState.get_bloch_vector(state.states[0]) )
+            for psi in state.states:
+                vecs_states.append( QuantumState.get_bloch_vector(psi) )
             
         sphere = Bloch()
         sphere.clear()
