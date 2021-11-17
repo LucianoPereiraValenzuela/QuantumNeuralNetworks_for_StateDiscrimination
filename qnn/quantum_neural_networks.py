@@ -7,8 +7,8 @@ from qiskit import QuantumCircuit, transpile, Aer
 from qiskit.algorithms.optimizers import Optimizer
 from qiskit.providers import Backend
 
-from qnn.config import config
-from qnn.quantum_state import QuantumState
+from config import config
+from quantum_state import QuantumState
 
 
 class StateDiscriminativeQuantumNeuralNetworks:
@@ -94,7 +94,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
                 n_noisy.append(len(self._states[i].states))
 
         # Transpile and run
-        circuit_measurements = transpile(circuit_measurements, self._backend)
+        circuit_measurements = transpile(circuit_measurements, self._backend, optimization_level=3 )
         jobs = self._backend.run(circuit_measurements, shots=self._shots)
         results = jobs.result().get_counts()
 
