@@ -1,9 +1,8 @@
-from unittest.mock import Mock
-from qiskit import QuantumCircuit
+from unittest.mock import patch
+
 import numpy as np
 
-from ..quantum_state import QuantumState
-from ..config import test_config as config
+from qnn.quantum_state import QuantumState
 
 
 class TestQuantumState:
@@ -15,22 +14,58 @@ class TestQuantumState:
         qs = QuantumState(states)
 
         assert qs._states is states
-        assert qs._probabilities is probabilities
+        assert np.testing.assert_array_equal(qs._probabilities, probabilities) is None
 
-    def cost_function_test(self):
-        pass
+    def probabilities_test(self):
+        states = [0, 0]
+        probabilities = [1.0, 1.0]
+        qs = QuantumState(states, probabilities)
 
-    def decompose_parameters_test(self):
-        pass
+        result = qs.probabilities
+        assert result == probabilities
 
-    def discriminate_test(self):
-        pass
+    def states_test(self):
+        states = [0, 0]
+        probabilities = [1.0, 1.0]
+        qs = QuantumState(states, probabilities)
 
-    def get_n_element_povm_test(self):
-        pass
+        result = qs.states
+        assert result == states
 
-    def helstrom_bound_test(self):
-        pass
+    def random_ok_test(self):
+        states = [0, 0]
+        probabilities = [1.0, 1.0]
+        qs = QuantumState(states, probabilities)
 
-    def random_quantum_state_test(self):
-        pass
+        expected_result = QuantumState(states=[np.array([0.5 + 0.5j, 0.5 + 0.5j])])
+
+        with patch.object(QuantumState, "normalized_random_array", return_value=np.array([0.5 + 0.5j, 0.5 + 0.5j])):
+            result = qs.random()
+
+        assert np.testing.assert_array_equal(result.states, expected_result.states) is None
+        assert np.testing.assert_array_equal(result.probabilities, expected_result.probabilities) is None
+
+    def random_ok_with_invalid_input_test(self):
+        states = [0, 0]
+        probabilities = [1.0, 1.0]
+        qs = QuantumState(states, probabilities)
+
+        expected_result = QuantumState(states=[np.array([0.5 + 0.5j, 0.5 + 0.5j])])
+
+        with patch.object(QuantumState, "normalized_random_array", return_value=np.array([0.5 + 0.5j, 0.5 + 0.5j])):
+            result = qs.random("invalid input")
+
+        assert np.testing.assert_array_equal(result.states, expected_result.states) is None
+        assert np.testing.assert_array_equal(result.probabilities, expected_result.probabilities) is None
+
+    def normalized_random_array_test(self):
+        states = [0, 0]
+        probabilities = [1.0, 1.0]
+        qs = QuantumState(states, probabilities)
+
+        expected_result = np.array([0.5+0.5j, 0.5+0.5j])
+
+        with patch.object(np.random, "randn", return_value=np.array([1, 1])):
+            result = qs.normalized_random_array()
+
+        assert np.testing.assert_array_equal(result, expected_result) is None

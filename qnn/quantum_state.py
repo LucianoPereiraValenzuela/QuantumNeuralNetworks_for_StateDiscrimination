@@ -1,10 +1,10 @@
-from typing import Optional
+from typing import Optional, List
 
 import numpy as np
 
 
 class QuantumState:
-    def __init__(self, states: [np.array], probabilities: Optional[float] = None) -> None:
+    def __init__(self, states: [np.array], probabilities: Optional[List[float]] = None) -> None:
         self._probabilities = [1 / len(states)] * len(states) if probabilities is None else probabilities
         self._states = states
 
