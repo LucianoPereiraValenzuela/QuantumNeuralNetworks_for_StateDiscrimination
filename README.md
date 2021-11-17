@@ -16,6 +16,8 @@ measure on a circuit-based quantum computer"
 
 [2] A. Patterson et al., "Quantum state discrimination using noisy quantum neural networks"
 
+For more details, see our presentation for the [qiskit hackathon global 2021.](https://docs.google.com/presentation/d/1_14M5NA_008ZQ5EbfpZZ8r3dNMFy2ue359XZdKV57oc/edit?usp=sharing) 
+
 ## Members
 - Luciano Pereira Valenzuela
 - Rafael González López
