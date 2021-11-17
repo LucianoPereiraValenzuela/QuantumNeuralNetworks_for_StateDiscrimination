@@ -19,7 +19,7 @@ measure on a circuit-based quantum computer".](https://arxiv.org/abs/2001.04749)
 For more details, you can see our [presentation](https://docs.google.com/presentation/d/1_14M5NA_008ZQ5EbfpZZ8r3dNMFy2ue359XZdKV57oc/edit?usp=sharing) for the [Qiskit Hackathon Global 2021.](https://qiskithackathon.global21.bemyapp.com/#/projects/61890abf1f2d250213305658)
 
 ## Members
-- Luciano Pereira Valenzuela
+- [Luciano Pereira Valenzuela](https://twitter.com/Luplaciano)
 - Rafael González López
 - Miguel Ángel Palomo Marcos
 - Alejandro Bravo
