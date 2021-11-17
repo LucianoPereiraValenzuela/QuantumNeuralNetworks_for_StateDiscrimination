@@ -44,3 +44,26 @@ class QuantumState:
         """
         z0 = np.random.randn(2) + 1j * np.random.randn(2)
         return z0 / np.linalg.norm(z0)
+    
+    @staticmethod
+    def get_bloch_vector(operator):
+        sx = np.array([[0, 1], [1, 0]])
+        sy = np.array([[0, -1j], [1j, 0]])
+        sz = np.array([[1, 0], [0, -1]])
+        
+        if isinstance(operator, QuantumState ):
+            operator = operator.states
+        
+        if isinstance(operator, list) is False:
+            operator = [operator]
+    
+        vecs = []
+        for O in operator:
+            if O.ndim == 1:
+                O = np.outer(O, O.T.conj())
+    
+            vecs.append([np.real(np.trace(O @ sx)),
+                         np.real(np.trace(O @ sy)),
+                         np.real(np.trace(O @ sz))])
+    
+        return vecs[0] if len(vecs) == 1 else vecs
