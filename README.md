@@ -1,23 +1,22 @@
 # Quantum Neural Networks for State Discrimination
 
 ## Abstract
-The discrimination of quantum states is an important task in many quantum technologies. 
-However, finding the measurement strategy to optimally discriminate two non-orthogonal states is not an easy task. 
+The quantum state discrimination is an important task in many quantum technologies
+However, it is not easy to find the optimal measurement strategy to discriminate non-orthogonal states.
 Quantum neural networks are an efficient alternative to solve this problem. 
 
-We propose a Qiskit module that uses quantum neural networks to find the optimal generalized measurement 
-that discriminates two non-orthogonal quantum states.
+In this project, we implement a Qiskit library to train quantum neural networks to find the optimal generalized measurement that discriminates non-orthogonal quantum states. 
 
 How it works? The system has three steps:
 
-1. Generalized Measurements: Build circuits that implement generalized measurements.
-2. Neural Networks: Use generalized measurement to build neural networks.
+1. Generalized Measurements: Build circuits that implement generalized measurements [1].
+2. Neural Networks: Use generalized measurement to build neural networks [2].
 3. Training: Train the neural network to find the optimal discriminator between two non-orthogonal quantum states.
 
-[1] A. Patterson et al., "Quantum state discrimination using noisy quantum neural networks"
-
-[2] Y. S. Yordanov and C. H. W. Barnes, "Implementation of a general single-qubit positive operator-valued 
+[1] Y. S. Yordanov and C. H. W. Barnes, "Implementation of a general single-qubit positive operator-valued 
 measure on a circuit-based quantum computer"
+
+[2] A. Patterson et al., "Quantum state discrimination using noisy quantum neural networks"
 
 ## Members
 - Luciano Pereira Valenzuela
