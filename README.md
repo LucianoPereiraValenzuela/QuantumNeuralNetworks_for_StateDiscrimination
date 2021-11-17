@@ -11,10 +11,10 @@ How it works? The system has three steps:
 2. Neural Networks: Use generalized measurement to build quantum neural networks [2].
 3. Training: Train the neural network to find the optimal discriminator between non-orthogonal quantum states.
 
-[1] Y. S. Yordanov and C. H. W. Barnes, "Implementation of a general single-qubit positive operator-valued 
-measure on a circuit-based quantum computer"
+[1] [Y. S. Yordanov and C. H. W. Barnes, "Implementation of a general single-qubit positive operator-valued 
+measure on a circuit-based quantum computer".](https://arxiv.org/abs/2001.04749)
 
-[2] A. Patterson et al., "Quantum state discrimination using noisy quantum neural networks"
+[2] [A. Patterson et al., "Quantum state discrimination using noisy quantum neural networks".](https://journals.aps.org/prresearch/abstract/10.1103/PhysRevResearch.3.013063)
 
 For more details, you can see our [presentation](https://docs.google.com/presentation/d/1_14M5NA_008ZQ5EbfpZZ8r3dNMFy2ue359XZdKV57oc/edit?usp=sharing) for the [Qiskit Hackathon Global 2021.](https://qiskithackathon.global21.bemyapp.com/#/projects/61890abf1f2d250213305658)
 
