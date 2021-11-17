@@ -7,8 +7,8 @@ from qiskit import QuantumCircuit, transpile, Aer
 from qiskit.algorithms.optimizers import Optimizer
 from qiskit.providers import Backend
 
-from config import config
-from quantum_state import QuantumState
+from qnn.config import config
+from qnn.quantum_state import QuantumState
 
 
 class StateDiscriminativeQuantumNeuralNetworks:
