@@ -12,6 +12,7 @@ from qnn.quantum_state import QuantumState
 
 from qutip import Bloch
 
+
 class StateDiscriminativeQuantumNeuralNetworks:
     def __init__(
             self,
@@ -98,7 +99,7 @@ class StateDiscriminativeQuantumNeuralNetworks:
                 n_noisy.append(len(self._states[i].states))
 
         # Transpile and run
-        circuit_measurements = transpile(circuit_measurements, self._backend, optimization_level=3 )
+        circuit_measurements = transpile(circuit_measurements, self._backend, optimization_level=3)
         jobs = self._backend.run(circuit_measurements, shots=self._shots)
         results = jobs.result().get_counts()
 
@@ -279,12 +280,12 @@ class StateDiscriminativeQuantumNeuralNetworks:
             povm.compose(gate_v2, list(range(1, i + 1)) + [0], inplace=True)
 
         return povm
-    
+
     @staticmethod
-    def povm( n: int, theta_u: [float], phi_u: [float], lambda_u: [float], theta1: [float], theta2: [float],
-         theta_v1: [float], theta_v2: [float], phi_v1: [float], phi_v2: [float], lambda_v1: [float],
-         lambda_v2: [float], output='povm'):
-        
+    def povm(n: int, theta_u: [float], phi_u: [float], lambda_u: [float], theta1: [float], theta2: [float],
+             theta_v1: [float], theta_v2: [float], phi_v1: [float], phi_v2: [float], lambda_v1: [float],
+             lambda_v2: [float], output='povm'):
+
         """Construct the POVM implemented by the circuit given by get_n_element_povm()
         
         https://arxiv.org/abs/2001.04749
@@ -318,41 +319,42 @@ class StateDiscriminativeQuantumNeuralNetworks:
         lambda_v2 
             Angles of the V2 gate. There are n V2 gates in the circuit.
         output    
-            type of outuput. Can be 'povm', 'kraus', and 'unitary'.
+            type of output. Can be 'povm', 'kraus', and 'unitary'.
             
         Returns
         -------
         list with POVM elements
         
         """
-        
-        
-        circuit = StateDiscriminativeQuantumNeuralNetworks.get_n_element_povm(n, theta_u, phi_u, lambda_u, theta1, theta2,
-                                         theta_v1, theta_v2, phi_v1, phi_v2, lambda_v1,
-                                         lambda_v2)
+
+        circuit = StateDiscriminativeQuantumNeuralNetworks.get_n_element_povm(n, theta_u, phi_u, lambda_u, theta1,
+                                                                              theta2,
+                                                                              theta_v1, theta_v2, phi_v1, phi_v2,
+                                                                              lambda_v1,
+                                                                              lambda_v2)
         circuit.save_unitary()
-        
+
         backend = Aer.get_backend('aer_simulator_unitary')
         circuit = transpile(circuit, backend)
         results = backend.run(circuit).result()
-        
-        U = results.get_unitary()
-        
+
+        u_matrix = results.get_unitary()
+
         if output == 'unitary':
-            return U
+            return u_matrix
         else:
-            U = U.reshape(2 ** (n - 1), 2, 2 ** (n - 1), 2)
-            M = []
+            u_matrix = u_matrix.reshape(2 ** (n - 1), 2, 2 ** (n - 1), 2)
+            m_list = []
             for m in range(2 ** (n - 1)):
                 if output == 'kraus':
-                    M.append(U[m, :, 0, :])
+                    m_list.append(u_matrix[m, :, 0, :])
                 elif output == 'povm':
-                    M.append(U[m, :, 0, :].T.conj() @ U[m, :, 0, :])
-        
-            return M
-      
+                    m_list.append(u_matrix[m, :, 0, :].T.conj() @ u_matrix[m, :, 0, :])
+
+            return m_list
+
     @staticmethod
-    def plot_bloch_sphere( povm: [np.array] , states: [np.array, QuantumState] ):
+    def plot_bloch_sphere(povm: [np.array], states: [np.array, QuantumState]):
         """Plot in the Bloch sphere the povm and the states.
         
         Parameters
@@ -367,20 +369,19 @@ class StateDiscriminativeQuantumNeuralNetworks:
             qutip Bloch sphere
         
         """
-        vecs = QuantumState.get_bloch_vector(povm)
-        vecs_states = []
+        vec_list = QuantumState.get_bloch_vector(povm)
+        vec_states = []
         for state in states:
             for psi in state.states:
-                vecs_states.append( QuantumState.get_bloch_vector(psi) )
-            
+                vec_states.append(QuantumState.get_bloch_vector(psi))
+
         sphere = Bloch()
         sphere.clear()
-        for v in vecs_states:
+        for v in vec_states:
             sphere.add_points(v)
-        for v in vecs:
+        for v in vec_list:
             sphere.add_vectors(v)
         return sphere
-        
 
     @staticmethod
     def helstrom_bound(psi: QuantumState, phi: np.array) -> float:
@@ -398,10 +399,3 @@ class StateDiscriminativeQuantumNeuralNetworks:
         Helstrom bound
         """
         return 0.5 - 0.5 * np.sqrt(1 - abs(np.vdot(psi.states[0], phi.states[0])) ** 2)
-    
-    
-    
-    
-    
-    
-    
