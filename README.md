@@ -10,8 +10,8 @@ In this project, we implement a Qiskit library to train quantum neural networks 
 How it works? The system has three steps:
 
 1. Generalized Measurements: Build circuits that implement generalized measurements [1].
-2. Neural Networks: Use generalized measurement to build neural networks [2].
-3. Training: Train the neural network to find the optimal discriminator between two non-orthogonal quantum states.
+2. Neural Networks: Use generalized measurement to build quantum neural networks [2].
+3. Training: Train the neural network to find the optimal discriminator between non-orthogonal quantum states.
 
 [1] Y. S. Yordanov and C. H. W. Barnes, "Implementation of a general single-qubit positive operator-valued 
 measure on a circuit-based quantum computer"
